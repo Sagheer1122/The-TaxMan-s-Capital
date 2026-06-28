@@ -1,16 +1,40 @@
-# React + Vite
+# The TaxMan's Capital
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**The TaxMan's Capital** is a comprehensive, modern digital platform tailored specifically for CA, ACCA, and finance professionals in Pakistan. It serves as a central hub for career guidance, professional networking, study resources, and job opportunities.
 
-Currently, two official plugins are available:
+## 🌟 Key Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **🎓 Career Support & Guidance:** Expert counseling, mentorship programs, and roadmaps for CA, ACCA, and CFAP students.
+- **💼 Job Portal (Inductions & Placements):** A curated portal for finding articleships, internships, and full-time positions across Big 4 and top-tier accounting firms in Pakistan and overseas.
+- **📚 Study Resources:** A massive repository of study guides, CV templates, interview prep materials, and past papers for PRC, CAF, and CFAP levels.
+- **💬 Community Forums:** Dedicated discussion spaces for different certification levels to foster peer-to-peer learning and networking.
+- **📢 Announcements:** Live timeline of ICAP/ACCA events, webinars, exam notifications, and career fairs.
 
-## React Compiler
+## 🛠️ Technology Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend:** React.js, Vite
+- **Styling:** Tailwind CSS, Lucide Icons
+- **Architecture:** Fully Static SPA (Single Page Application)
+- **Deployment:** Ready for Netlify, Vercel, or GitHub Pages
 
-## Expanding the ESLint configuration
+## 🚀 How to Run Locally
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Sagheer1122/The-TexMan-s-Capital.git
+   ```
+2. Navigate into the project directory:
+   ```bash
+   cd "The-TexMan-s-Capital"
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## 👨‍💻 Project By
+- **Sagheer1122**
