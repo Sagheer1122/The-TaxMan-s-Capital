@@ -41,6 +41,7 @@ import Contact from '../Contact/Contact';
 import Login from '../Login/Login';
 import AdminDashboard from '../AdminDashboard/AdminDashboard';
 import UserDashboard from '../UserDashboard/UserDashboard';
+import Events from '../Events/Events';
 const getProfiles = async () => [];
 const logoutUser = async () => { window.location.reload(); };
 const registerUser = async () => ({ user: { id: 'dummy', role: 'user' } });
@@ -208,6 +209,8 @@ export default function Home({ session, sessionLoading }) {
         setActiveTab('Contact Us');
       } else if (hash === '#announcements') {
         setActiveTab('Announcements');
+      } else if (hash === '#events') {
+        setActiveTab('Events');
       } else if (hash === '#team') {
         setActiveTab('Our Mission');
         setTimeout(() => {
@@ -778,12 +781,14 @@ export default function Home({ session, sessionLoading }) {
                       Announcements
                     </a>
                     <a
-                      href="#"
+                      href="#events"
                       onClick={(e) => {
                         e.preventDefault();
-                        alert('Events calendar coming soon!');
+                        setActiveTab('Events');
+                        window.location.hash = '#events';
                       }}
-                      className="block px-4 py-2.5 text-xs xl:text-sm font-medium text-gray-300 hover:text-brandGreen hover:bg-white/5 transition-colors"
+                      className={`block px-4 py-2.5 text-xs xl:text-sm font-medium transition-colors hover:text-brandGreen hover:bg-white/5 ${activeTab === 'Events' ? 'text-brandGreen bg-white/5' : 'text-gray-300'
+                        }`}
                     >
                       Events
                     </a>
@@ -1119,13 +1124,15 @@ export default function Home({ session, sessionLoading }) {
                     • Announcements
                   </a>
                   <a
-                    href="#"
+                    href="#events"
                     onClick={(e) => {
                       e.preventDefault();
+                      setActiveTab('Events');
                       setMobileMenuOpen(false);
-                      alert('Events calendar coming soon!');
+                      window.location.hash = '#events';
                     }}
-                    className="block py-2 px-4 rounded-xl text-sm text-gray-300"
+                    className={`block py-2 px-4 rounded-xl text-sm ${activeTab === 'Events' ? 'text-brandGreen bg-white/5 font-semibold' : 'text-gray-300'
+                      }`}
                   >
                     • Events
                   </a>
@@ -1273,6 +1280,8 @@ export default function Home({ session, sessionLoading }) {
         <Contact />
       ) : activeTab === 'Announcements' ? (
         <Announcements initialAnnouncementId={selectedAnnouncementIdForModal} onClearInitialAnnouncement={() => setSelectedAnnouncementIdForModal(null)} />
+      ) : activeTab === 'Events' ? (
+        <Events />
       ) : activeTab === 'Login' ? (
         <Login
           onLoginSuccess={() => {

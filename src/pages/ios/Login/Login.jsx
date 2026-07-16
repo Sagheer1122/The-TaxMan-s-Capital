@@ -244,14 +244,15 @@ export default function Login({ onLoginSuccess, onBack, startFlipped = false, on
           </button>
         )}
 
-        {/* 3D Perspective Card Wrapper */}
-        <div className="max-w-md w-full h-[480px] perspective-1000 relative">
+        {/* Sliding Panel Wrapper */}
+        <div className={`max-w-md w-full relative overflow-hidden bg-white border border-gray-100 rounded-3xl shadow-xl transition-all duration-500 ease-in-out ${isFlipped ? 'h-[650px]' : 'h-[480px]'}`}>
+          
+          {/* ──────── FRONT FACE: LOGIN ──────── */}
           <div
-            className={`w-full h-full transition-transform duration-700 preserve-3d relative ${isFlipped ? 'rotate-y-180' : ''
-              }`}
+            className={`w-full h-full absolute inset-0 p-6 sm:p-8 flex flex-col justify-start gap-y-4 transition-all duration-500 ease-in-out transform ${
+              isFlipped ? '-translate-x-full opacity-0 pointer-events-none' : 'translate-x-0 opacity-100 pointer-events-auto'
+            }`}
           >
-            {/* ──────── FRONT FACE: LOGIN ──────── */}
-            <div className="w-full h-full absolute inset-0 backface-hidden bg-white border border-gray-100 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col justify-start gap-y-4">
 
               <div className="space-y-6">
                 {/* Header */}
@@ -361,12 +362,16 @@ export default function Login({ onLoginSuccess, onBack, startFlipped = false, on
                 </button>
               </div>
 
-            </div>
+          </div>
 
-            {/* ──────── BACK FACE: SIGN UP ──────── */}
-            <div className="w-full h-full absolute inset-0 backface-hidden rotate-y-180 bg-white border border-gray-100 rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col justify-start gap-y-3 overflow-y-auto">
+          {/* ──────── BACK FACE: SIGN UP ──────── */}
+          <div
+            className={`w-full h-full absolute inset-0 p-6 sm:p-8 flex flex-col justify-start gap-y-3 overflow-hidden transition-all duration-500 ease-in-out transform ${
+              isFlipped ? 'translate-x-0 opacity-100 pointer-events-auto' : 'translate-x-full opacity-0 pointer-events-none'
+            }`}
+          >
 
-              <div className="space-y-5">
+              <div className="space-y-4">
                 {/* Header */}
                 <div className="text-center space-y-2">
                   <h2 className="text-2xl sm:text-3xl font-black text-gray-900 leading-tight">Create an Account</h2>
@@ -390,7 +395,7 @@ export default function Login({ onLoginSuccess, onBack, startFlipped = false, on
                 )}
 
                 {/* Form */}
-                <form onSubmit={handleSignUpSubmit} className="space-y-3">
+                <form onSubmit={handleSignUpSubmit} className="space-y-2">
                   <div className="space-y-1">
                     <label className="text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wide">Full Name</label>
                     <div className="relative">
@@ -504,7 +509,6 @@ export default function Login({ onLoginSuccess, onBack, startFlipped = false, on
                 </button>
               </div>
 
-            </div>
           </div>
         </div>
 

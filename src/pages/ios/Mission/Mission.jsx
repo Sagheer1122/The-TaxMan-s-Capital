@@ -275,29 +275,57 @@ export default function Mission() {
 
             {/* Vision Card */}
             <div id="our-vision" className="lg:col-span-5 flex">
-              <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm flex flex-col justify-between w-full min-h-[380px] hover:shadow-md transition-shadow duration-300">
-                <div className="flex flex-col items-start text-left">
-                  <span className="text-brandGreen text-[11px] font-extrabold tracking-widest uppercase mb-2">OUR VISION</span>
-                  <h3 className="text-2xl font-extrabold text-navy tracking-tight mt-1 mb-4">
-                    A Better Future for <br />Every Aspiring Professional
+              <div className="relative overflow-hidden bg-gradient-to-br from-emerald-950 via-teal-950 to-emerald-900 rounded-3xl p-8 border border-emerald-500/20 shadow-2xl flex flex-col justify-between w-full min-h-[420px] transition-all duration-300 hover:scale-[1.01] hover:shadow-emerald-500/10 hover:shadow-2xl group">
+                
+                {/* Glowing radial gradient overlays */}
+                <div className="absolute top-0 right-0 -mt-12 -mr-12 w-48 h-48 bg-emerald-400/20 rounded-full blur-3xl opacity-50 pointer-events-none group-hover:opacity-75 transition-opacity duration-500" />
+                <div className="absolute bottom-0 left-0 -mb-12 -ml-12 w-48 h-48 bg-teal-400/20 rounded-full blur-3xl opacity-50 pointer-events-none group-hover:opacity-75 transition-opacity duration-500" />
+                
+                {/* Textured background overlay */}
+                <div className="absolute inset-0 bg-[radial-gradient(rgba(16,185,129,0.08)_1px,transparent_1px)] bg-[size:1.5rem_1.5rem] opacity-60 pointer-events-none" />
+
+                <div className="flex flex-col items-start text-left relative z-10">
+                  <div className="flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full mb-4">
+                    <Rocket className="w-3.5 h-3.5 text-brandGreen animate-pulse" />
+                    <span className="text-brandGreen text-[10px] font-black tracking-widest uppercase">OUR VISION</span>
+                  </div>
+                  
+                  <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1 mb-4 leading-tight">
+                    Shaping the Future <br />of Pakistan's Professionals
                   </h3>
-                  <p className="text-xs sm:text-sm text-gray-500 font-semibold leading-relaxed">
+                  
+                  <p className="text-xs sm:text-sm text-emerald-100/80 font-medium leading-relaxed mb-6">
                     We envision a Pakistan where every CA &amp; ACCA student, regardless of background or location, has equal access to guidance, resources, and opportunities to achieve their dreams.
                   </p>
+                  
+                  {/* Vision Pillars/Points */}
+                  <div className="space-y-3 w-full">
+                    <div className="flex items-center space-x-3 bg-white/5 border border-white/10 p-3 rounded-2xl hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-200 group/item">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center text-brandGreen font-black text-xs shrink-0 group-hover/item:scale-110 transition-transform duration-200">
+                        01
+                      </div>
+                      <span className="text-xs font-semibold text-gray-200">Equal Opportunity for Remote Students</span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3 bg-white/5 border border-white/10 p-3 rounded-2xl hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-200 group/item">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center text-brandGreen font-black text-xs shrink-0 group-hover/item:scale-110 transition-transform duration-200">
+                        02
+                      </div>
+                      <span className="text-xs font-semibold text-gray-200">100% Free Counseling &amp; Mentorship</span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3 bg-white/5 border border-white/10 p-3 rounded-2xl hover:bg-white/10 hover:border-emerald-500/30 transition-all duration-200 group/item">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center text-brandGreen font-black text-xs shrink-0 group-hover/item:scale-110 transition-transform duration-200">
+                        03
+                      </div>
+                      <span className="text-xs font-semibold text-gray-200">Seamless Transition to Corporate Roles</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-8 pt-6 border-t border-gray-50">
-                  <svg viewBox="-20 0 270 80" className="w-full h-auto" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="-8" cy="42" r="14" stroke="#A7F3D0" strokeWidth="1.5" strokeDasharray="3,3" />
-                    <rect x="15" y="65" width="12" height="15" rx="3" fill="#E2FDF0" />
-                    <rect x="45" y="58" width="12" height="22" rx="3" fill="#C6FBE0" />
-                    <rect x="75" y="50" width="12" height="30" rx="3" fill="#A7F3D0" />
-                    <rect x="105" y="42" width="12" height="38" rx="3" fill="#6EE7B7" />
-                    <rect x="135" y="32" width="12" height="48" rx="3" fill="#34D399" />
-                    <rect x="165" y="22" width="12" height="58" rx="3" fill="#059669" />
-                    <rect x="195" y="10" width="12" height="70" rx="3" fill="#00C853" />
-                    <path d="M 21 68 L 51 60 L 81 52 L 111 44 L 141 34 L 171 24 L 201 12 L 223 4" stroke="#00C853" strokeWidth="2.5" strokeLinecap="round" />
-                    <path d="M 219 -3 L 232 0 L 227 12 Z" fill="#00C853" stroke="#00C853" strokeWidth="1" strokeLinejoin="round" />
-                  </svg>
+
+                <div className="relative mt-8 pt-4 border-t border-white/10 flex items-center justify-between text-xs text-emerald-400 font-bold group-hover:text-emerald-300 transition-colors duration-200 z-10">
+                  <span>Empowerment through action</span>
+                  <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" />
                 </div>
               </div>
             </div>

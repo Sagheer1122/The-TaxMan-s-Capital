@@ -47,9 +47,7 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
 
   const categories = [
     { name: 'All' },
-    { name: 'Events' },
     { name: 'Jobs & Inductions' },
-    { name: 'Webinars' },
     { name: 'Official Notices' },
     { name: 'Competitions' },
     { name: 'Study Updates' },
@@ -87,25 +85,6 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
       ctaUrl: 'https://ey.com/pk'
     },
     {
-      id: 102,
-      group: 'Today',
-      date: '12 June 2026',
-      time: '04:00 PM',
-      tag: 'Webinars',
-      title: 'Partner Interview Secrets: Live Session with Saboor Ahmad',
-      desc: 'Join our exclusive webinar on how to clear final round partner interviews. Registration is free but seats are limited.',
-      isNew: true,
-      author: 'Saboor Ahmad',
-      details: `Join our exclusive webinar on how to clear final round partner interviews. Saboor Ahmad will share key strategies, expected questions, and interview etiquettes.
-      
-      ### Webinar Schedule:
-      - **Date:** 12 June 2026
-      - **Time:** 8:00 PM PST
-      - **Zoom link:** Sent to registered emails.`,
-      ctaText: 'Register for Webinar',
-      ctaUrl: '#register'
-    },
-    {
       id: 103,
       group: 'Today',
       date: '05 June 2026',
@@ -138,25 +117,6 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
       Apply online through the PwC Pakistan portal before the deadline.`,
       ctaText: 'Apply via PwC Portal',
       ctaUrl: 'https://pwc.com.pk'
-    },
-    {
-      id: 2,
-      group: 'Today',
-      date: '24 May 2024',
-      time: '09:00 AM',
-      tag: 'Webinars',
-      title: 'ICAP Webinar: How to Prepare for CA Final',
-      desc: 'Join live session with EY Pakistan. Learn best strategies to ace your CA Final exams.',
-      isNew: true,
-      author: 'EY Pakistan Mentoring',
-      details: `Learn key strategies, syllabus guidelines, and past paper revision tips to pass your CA Final exams (CFAP/MSA stage). Hosted by senior managers from EY Pakistan.
-      
-      ### Event Schedule:
-      - **Date:** 24 May 2024
-      - **Time:** 7:00 PM - 8:30 PM PST
-      - **Zoom Link:** Will be emailed to registered candidates.`,
-      ctaText: 'Register for Event',
-      ctaUrl: '#register'
     },
     {
       id: 3,
@@ -201,25 +161,11 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
       ctaUrl: '#meetup'
     },
     {
-      id: 6,
-      group: '22 May 2024',
-      date: '22 May 2024',
-      time: '08:15 PM',
-      tag: 'Events',
-      title: 'Deloitte Tax Workshop – Registrations Open',
-      desc: 'Free workshop on \'Future of Taxation in Pakistan\'.',
-      isNew: false,
-      author: 'Deloitte Pakistan Tax',
-      details: `A comprehensive 1-day workshop covering incoming Finance Act guidelines, e-filing automation, and career tracks in corporate taxation. Certificate provided.`,
-      ctaText: 'Register for Workshop',
-      ctaUrl: '#workshop'
-    },
-    {
       id: 7,
       group: '22 May 2024',
       date: '22 May 2024',
       time: '11:20 AM',
-      tag: 'Events',
+      tag: 'Official Notices',
       title: 'ACCA June 2024 Attempt – Important Reminders',
       desc: 'Check important exam day reminders and guidelines.',
       isNew: false,
@@ -227,20 +173,6 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
       details: `Key guidelines regarding exam docket printouts, valid CNIC requirements, calculator restrictions, and COVID-19 safety guidelines for the upcoming June session.`,
       ctaText: 'View Exam Reminders',
       ctaUrl: 'https://accaglobal.com'
-    },
-    {
-      id: 8,
-      group: '21 May 2024',
-      date: '21 May 2024',
-      time: '07:00 PM',
-      tag: 'Events',
-      title: 'Pakistan Budget 2024-25 Analysis Session',
-      desc: 'Watch expert analysis of the new budget and its impact.',
-      isNew: false,
-      author: 'TaxMan Advisory Panel',
-      details: `A detailed panel discussion breaking down direct tax, sales tax reforms, and corporate adjustments in the federal budget and its implications for CA students and trainees.`,
-      ctaText: 'Watch Analysis',
-      ctaUrl: '#watch-budget'
     },
     {
       id: 9,
@@ -275,30 +207,11 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
       details: `BDO Pakistan is hiring CA trainees (CAF qualified) and ACCA trainees for Audit, Tax, and Corporate Advisory departments.
       
       ### Selection Process:
-      1. Online Application Screening.
-      2. Written Test (Accounting, Audit, and General Aptitude).
-      3. HR & Partner Interviews.`,
+      - Online Application Screening.
+      - Written Test (Accounting, Audit, and General Aptitude).
+      - HR & Partner Interviews.`,
       ctaText: 'Apply via BDO Portal',
       ctaUrl: 'https://bdo.com.pk'
-    },
-    {
-      id: 11,
-      group: '18 May 2024',
-      date: '18 May 2024',
-      time: '04:00 PM',
-      tag: 'Webinars',
-      title: 'ACCA Pakistan: Strategic Business Leader (SBL) Boot Camp',
-      desc: 'A 3-day virtual boot camp to prepare for the Strategic Professional level attempt.',
-      isNew: false,
-      author: 'ACCA Pakistan Office',
-      details: `Join ACCA Pakistan's official trainers for a deep-dive exam preparation boot camp.
-      
-      ### Boot Camp Details:
-      - **Dates:** 28 - 30 May 2024
-      - **Time:** 3:00 PM - 6:00 PM PKT daily
-      - **Topics:** Strategic planning, leadership models, risk assessment, and case study simulation.`,
-      ctaText: 'Register for Boot Camp',
-      ctaUrl: '#sbl-register'
     },
     {
       id: 12,
@@ -342,7 +255,16 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
       title: 'ICAP Issues New Guidance for Practical Training',
       date: '22 May 2024',
       color: 'bg-blue-600',
-      desc: 'Important guidelines for CA trainees regarding leaves and training contracts.'
+      desc: 'Important guidelines for CA trainees regarding leaves and training contracts.',
+      author: 'ICAP Education Department',
+      details: `ICAP has officially released updated regulations regarding trainee leaves, training contract transfers, and supervisor evaluations. Trainees are advised to review the maximum leave allowance for CAF and CFAP attempts to avoid delays in articleship execution.
+      
+      ### Key Guidelines:
+      - Leaves count adjustments for exam attempts.
+      - Simplified process for firm-to-firm transfer certificates.
+      - Mandatory digital logging of training hours.`,
+      ctaText: 'Download Official Directive',
+      ctaUrl: 'https://icap.org.pk'
     },
     {
       id: 2,
@@ -350,15 +272,30 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
       title: 'Top Firms to Participate in ICAP Career Fair 2026',
       date: '21 May 2024',
       color: 'bg-emerald-600',
-      desc: 'PwC, EY, KPMG, BDO, and major banks set to recruit on the spot.'
+      desc: 'PwC, EY, KPMG, BDO, and major banks set to recruit on the spot.',
+      author: 'ICAP Placement Board',
+      details: `The annual national ICAP Career Fair is back. Senior partners and HR executives from the Big 4 accounting firms, mid-tier advisory practices, and leading multinational banks will be holding on-the-spot interviews and screening resume portfolios.
+      
+      ### Preparation Instructions:
+      - Carry multiple hardcopies of your updated resume.
+      - Formal professional business attire is mandatory.
+      - Pre-register via the ICAP student portal link.`,
+      ctaText: 'Register for Career Fair',
+      ctaUrl: 'https://icap.org.pk'
     },
     {
       id: 3,
-      tag: 'WEBINAR',
-      title: 'Upcoming Webinar Series for CA & ACCA Students',
+      tag: 'STUDY UPDATE',
+      title: 'IFRS 18 Standards Cheat Sheet Released',
       date: '20 May 2024',
       color: 'bg-purple-600',
-      desc: 'Learn deal advisory, transfer pricing, and corporate finance basics.'
+      desc: 'Download our comprehensive 2-page summary guide on incoming IFRS 18 changes.',
+      author: 'TaxMan Study Panel',
+      details: `With the incoming introduction of IFRS 18 (Presentation and Disclosure in Financial Statements) replacing IAS 1, our study panel has compiled a concise 2-page reference booklet detailing key balance sheet adjustments, operating profit categorizations, and disclosure requirements for CA Finalists.
+      
+      Free for download in PDF format.`,
+      ctaText: 'Download PDF Cheat Sheet',
+      ctaUrl: '#resources'
     },
     {
       id: 4,
@@ -366,7 +303,13 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
       title: 'Islamabad Chapter Meetup Highlights',
       date: '19 May 2024',
       color: 'bg-cyan-600',
-      desc: 'Highlights from our recent peer networking and panel session in Islamabad.'
+      desc: 'Highlights from our recent peer networking and panel session in Islamabad.',
+      author: 'TaxMan Islamabad Lead',
+      details: `Over 150 CA and ACCA candidates attended our networking meetup in Islamabad. Highlights included resume reviews by HR reps, mock interviews, and career guidance panel talks by qualified controllers from foreign MNCs.
+      
+      Photos and video briefs are available on our social channels.`,
+      ctaText: 'View Event Gallery',
+      ctaUrl: 'https://facebook.com'
     },
     {
       id: 5,
@@ -374,7 +317,13 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
       title: 'Case Study Competition – Winners Announced',
       date: '18 May 2024',
       color: 'bg-amber-600',
-      desc: 'Congratulations to the winning team from CAF level students!'
+      desc: 'Congratulations to the winning team from CAF level students!',
+      author: 'TaxMan Competition Board',
+      details: `The National Corporate Analysis Case Study Competition has successfully concluded. We received over 50 submissions from CAF and ACCA students nationwide. Special congratulations to the winning team from Lahore, who analyzed financial structures of major telecom networks.
+      
+      Winning entries have been published on our Resources portal.`,
+      ctaText: 'View Winning Case Study',
+      ctaUrl: '#resources'
     },
     {
       id: 6,
@@ -382,7 +331,11 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
       title: 'New IFRS Notes Now Available',
       date: '17 May 2024',
       color: 'bg-rose-600',
-      desc: 'Comprehensive revision booklets for IFRS 15, IFRS 16, and IFRS 9.'
+      desc: 'Comprehensive revision booklets for IFRS 15, IFRS 16, and IFRS 9.',
+      author: 'TaxMan Academic Team',
+      details: `Highly structured revision sheets and practice questions covering complex accounting standards (IFRS 15 Revenue, IFRS 16 Leases, and IFRS 9 Financial Instruments) have been finalized by senior mentors. Includes solved exam papers and formatting templates.`,
+      ctaText: 'Download IFRS Booklets',
+      ctaUrl: '#resources'
     },
     {
       id: 7,
@@ -390,15 +343,27 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
       title: 'Crowe Pakistan Announces Corporate Advisory Vacancies',
       date: '16 May 2024',
       color: 'bg-teal-700',
-      desc: 'Hiring CA/ACCA trainees and junior consultants for financial modeling and transaction services.'
+      desc: 'Hiring CA/ACCA trainees and junior consultants for financial modeling and transaction services.',
+      author: 'Crowe Pakistan HR',
+      details: `Crowe Pakistan is accepting applications for junior advisory consultants and trainee analysts in Deal Advisory, Corporate Valuations, and Tax Advisory. Open to CA Intermediate (CAF passed) and ACCA members/affiliates.
+      
+      Send resumes directly to recruitment@crowe.com.pk.`,
+      ctaText: 'Apply via Email',
+      ctaUrl: 'mailto:recruitment@crowe.com.pk'
     },
     {
       id: 8,
-      tag: 'SEMINAR',
-      title: 'Pre-Articleship Preparation Seminar by Grant Thornton',
+      tag: 'TRAINING',
+      title: 'Articleship Orientation Series by Grant Thornton',
       date: '15 May 2024',
       color: 'bg-orange-600',
-      desc: 'Learn corporate communication, email writing, and basic audit methodologies before entering firms.'
+      desc: 'Access video guidelines on audit documentation, professional ethics, and spreadsheet basics.',
+      author: 'Grant Thornton HR',
+      details: `Get ready to join audit practices. This video session series compiled by senior managers from Grant Thornton covers Excel basics, audit documentation fundamentals, audit working paper file designs, and ethics directives.
+      
+      Free for all TaxMan registered students.`,
+      ctaText: 'Watch Video Series',
+      ctaUrl: '#resources'
     },
     {
       id: 9,
@@ -406,7 +371,13 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
       title: 'ICAP Presentation & Communication Skills (PCSF) Course',
       date: '14 May 2024',
       color: 'bg-emerald-700',
-      desc: 'New schedules announced for Lahore and Karachi students at ICAP campuses.'
+      desc: 'New schedules announced for Lahore and Karachi students at ICAP campuses.',
+      author: 'ICAP Training Dept',
+      details: `ICAP has announced its PCSF Course schedule for the upcoming months. The presentation and communications course is a mandatory prerequisite for CA candidates registering for CFAP level exams.
+      
+      Enrollment closes this weekend. Register via your ICAP student login.`,
+      ctaText: 'Register on ICAP Portal',
+      ctaUrl: 'https://icap.org.pk'
     }
   ];
 
@@ -743,7 +714,7 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
                         </div>
 
                         <button
-                          onClick={() => alert(`Details for news: ${news.title}`)}
+                          onClick={() => setSelectedAnnouncement(news)}
                           className="text-xs font-bold text-navy hover:text-brandGreen flex items-center transition-colors pt-2 cursor-pointer self-start"
                         >
                           Read Post <ChevronRight className="w-3.5 h-3.5 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
@@ -766,8 +737,8 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
                     Upcoming Events
                   </h4>
                   <button
-                    onClick={() => alert('Calendar under development')}
-                    className="text-[10px] font-extrabold text-brandGreen hover:underline"
+                    onClick={() => { window.location.hash = '#events'; }}
+                    className="text-[10px] font-extrabold text-brandGreen hover:underline cursor-pointer"
                   >
                     View Calendar
                   </button>
@@ -803,7 +774,11 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
                 {/* Events List */}
                 <div className="space-y-4 pt-2">
                   {upcomingEvents.map((evt, idx) => (
-                    <div key={idx} className="flex items-start space-x-3.5 group cursor-pointer">
+                    <div
+                      key={idx}
+                      onClick={() => { window.location.hash = '#events'; }}
+                      className="flex items-start space-x-3.5 group cursor-pointer"
+                    >
                       <div className="w-10 h-10 rounded-xl bg-emerald-500/5 border border-brandGreen/15 flex flex-col items-center justify-center shrink-0">
                         <span className="text-brandGreen font-black text-base leading-none">{evt.day}</span>
                         <span className="text-[8px] text-brandGreen font-bold uppercase tracking-widest mt-0.5">MAY</span>
@@ -817,7 +792,7 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
                 </div>
 
                 <button
-                  onClick={() => alert('Navigating to full events archive')}
+                  onClick={() => { window.location.hash = '#events'; }}
                   className="w-full py-3.5 bg-gray-50 hover:bg-brandGreen hover:text-white border border-gray-100 hover:border-brandGreen text-navy text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer"
                 >
                   View All Events →
