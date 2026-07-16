@@ -166,7 +166,7 @@ export default function UserDashboard({ session, onLogout, onProfileUpdate, save
         try {
           await supabase.from('profiles').update({ level: profile.level }).eq('id', session.user.id);
         } catch (dbErr) {
-          // column level may not exist in profiles table
+          console.warn('Could not update level in profiles:', dbErr);
         }
 
         // Also update Auth metadata (unstructured, safe for custom attributes)
@@ -186,28 +186,30 @@ export default function UserDashboard({ session, onLogout, onProfileUpdate, save
       }
 
       // Sync local userProfile wrapper
-      await updateUserProfile(session.user.id, {
-        full_name: profile.full_name,
-        username: profile.username,
-        avatar_url: profile.avatar_url,
-        level: profile.level,
-        phone: profile.phone,
-        city: profile.city,
-        institution: profile.institution,
-        papers_cleared: profile.papers_cleared,
-        cv_url: profile.cv_url
-      });
+      if (session?.user?.id) {
+        await updateUserProfile(session.user.id, {
+          full_name: profile.full_name,
+          username: profile.username,
+          avatar_url: profile.avatar_url,
+          level: profile.level,
+          phone: profile.phone,
+          city: profile.city,
+          institution: profile.institution,
+          papers_cleared: profile.papers_cleared,
+          cv_url: profile.cv_url
+        });
 
-      // Save level and all custom metadata fallbacks locally
-      localStorage.setItem(`user_level_${session.user.id}`, profile.level);
-      localStorage.setItem(`user_profile_meta_${session.user.id}`, JSON.stringify({
-        level: profile.level,
-        phone: profile.phone,
-        city: profile.city,
-        institution: profile.institution,
-        papers_cleared: profile.papers_cleared,
-        cv_url: profile.cv_url
-      }));
+        // Save level and all custom metadata fallbacks locally
+        localStorage.setItem(`user_level_${session.user.id}`, profile.level);
+        localStorage.setItem(`user_profile_meta_${session.user.id}`, JSON.stringify({
+          level: profile.level,
+          phone: profile.phone,
+          city: profile.city,
+          institution: profile.institution,
+          papers_cleared: profile.papers_cleared,
+          cv_url: profile.cv_url
+        }));
+      }
 
       if (onProfileUpdate) {
         onProfileUpdate({

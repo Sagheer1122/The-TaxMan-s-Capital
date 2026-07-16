@@ -1419,17 +1419,21 @@ export default function Home({ session, sessionLoading }) {
 
                 {/* Hero Right Graphic Card (Saboor Ahmad Profile) */}
                 <div className="lg:col-span-5 flex flex-col items-center justify-center relative -translate-y-10 lg:-translate-y-24">
-                  <div className="relative w-72 h-72 sm:w-80 sm:h-80 lg:w-96 lg:h-96 rounded-full border-4 border-dashed border-brandGreen/40 flex items-center justify-center p-3 animate-[spin_60s_linear_infinite] pointer-events-none">
-                    <div className="w-full h-full rounded-full border-2 border-brandGreen bg-navy-dark overflow-hidden pointer-events-auto"></div>
-                  </div>
+                  {/* Profile Graphic Wrapper */}
+                  <div className="relative w-72 h-72 sm:w-80 sm:h-80 lg:w-96 lg:h-96 flex items-center justify-center">
+                    {/* Rotating outer dashed border */}
+                    <div className="absolute inset-0 rounded-full border-4 border-dashed border-brandGreen/40 flex items-center justify-center p-3 animate-[spin_60s_linear_infinite] pointer-events-none">
+                      <div className="w-full h-full rounded-full border-2 border-brandGreen bg-navy-dark overflow-hidden pointer-events-auto"></div>
+                    </div>
 
-                  {/* Portrait Image container absolute over the border */}
-                  <div className="absolute w-64 h-64 sm:w-72 sm:h-72 lg:w-80 lg:h-80 rounded-full overflow-hidden border-4 border-brandGreen shadow-2xl flex items-center justify-center bg-navy-dark hover:scale-105 transition-transform duration-300">
-                    <img
-                      src={mentorImage}
-                      alt="Saboor Ahmad - Mentor Profile"
-                      className="w-full h-full object-cover"
-                    />
+                    {/* Portrait Image container over the border */}
+                    <div className="relative w-64 h-64 sm:w-72 sm:h-72 lg:w-80 lg:h-80 rounded-full overflow-hidden border-4 border-brandGreen shadow-2xl flex items-center justify-center bg-navy-dark hover:scale-105 transition-transform duration-300">
+                      <img
+                        src={mentorImage}
+                        alt="Saboor Ahmad - Mentor Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                   </div>
 
                   {/* Mentor Quote Card - Repositioned to the right side with bottom offset */}

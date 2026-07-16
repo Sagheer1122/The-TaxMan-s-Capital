@@ -435,6 +435,8 @@ const INITIAL_JOBS = [
   }
 ];
 
+const getJobs = async () => [];
+
 export default function Jobs({
   mode = 'jobs',
   initialSelectedJobId,
