@@ -1,23 +1,18 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Search,
   BookOpen,
   Download,
   FileText,
   Users,
-  Building,
   GraduationCap,
   Award,
   Clock,
   ShieldCheck,
   ChevronRight,
   ChevronLeft,
-  HelpCircle,
-  Mail,
   Send,
-  CheckCircle2,
   FileCheck,
-  TrendingUp,
   MessageSquare,
   Sparkles,
   ArrowRight
@@ -30,7 +25,7 @@ export default function Resources({ selectedCategory: externalCategory, setSelec
   const selectedCategory = externalCategory !== undefined ? externalCategory : internalCategory;
   const setSelectedCategory = setExternalCategory !== undefined ? setExternalCategory : setInternalCategory;
 
-  const [subscribed, setSubscribed] = useState(false);
+  const [, setSubscribed] = useState(false);
   const [email, setEmail] = useState('');
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [requestSubmitted, setRequestSubmitted] = useState(false);
@@ -130,7 +125,7 @@ export default function Resources({ selectedCategory: externalCategory, setSelec
     ...INITIAL_ALL_RESOURCES.map(r => ({ ...r, is_featured: false }))
   ];
 
-  const [resourcesList, setResourcesList] = useState(INITIAL_RESOURCES);
+  const [resourcesList] = useState(INITIAL_RESOURCES);
 
   // Data is now purely static
 

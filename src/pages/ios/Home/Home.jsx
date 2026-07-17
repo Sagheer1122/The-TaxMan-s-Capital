@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Briefcase,
-  Calendar,
   Users,
   BookOpen,
-  GraduationCap,
   Award,
   Bell,
-  User,
   MapPin,
   Phone,
   Mail,
@@ -22,11 +19,8 @@ import {
   Clock,
   FileText,
   CheckSquare,
-  HelpCircle,
-  Play,
   FileCheck,
   Bookmark,
-  BellRing,
   Globe,
   Sparkles
 } from 'lucide-react';
@@ -42,9 +36,8 @@ import Login from '../Login/Login';
 import AdminDashboard from '../AdminDashboard/AdminDashboard';
 import UserDashboard from '../UserDashboard/UserDashboard';
 import Events from '../Events/Events';
-const getProfiles = async () => [];
-const logoutUser = async () => { window.location.reload(); };
-const registerUser = async () => ({ user: { id: 'dummy', role: 'user' } });
+import { getProfiles, logoutUser, registerUser } from '../../../services/authService';
+import { INITIAL_JOBS } from '../../../data/jobsData';
 
 export default function Home({ session, sessionLoading }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -56,9 +49,8 @@ export default function Home({ session, sessionLoading }) {
   const [loginStartFlipped, setLoginStartFlipped] = useState(false);
   const [username, setUsername] = useState('');
   const [avatarLetter, setAvatarLetter] = useState('U');
-  const [avatarUrl, setAvatarUrl] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
   const [authLoading, setAuthLoading] = useState(true);
   const [savedJobs, setSavedJobs] = useState([1, 3, 5]);
   const [showProfilePrompt, setShowProfilePrompt] = useState(false);
@@ -67,13 +59,19 @@ export default function Home({ session, sessionLoading }) {
   useEffect(() => {
     if (session?.user?.id) {
       const stored = localStorage.getItem(`saved_jobs_${session.user.id}`);
-      if (stored) {
-        setSavedJobs(JSON.parse(stored));
-      } else {
-        setSavedJobs([1, 3, 5]);
-      }
+      const timer = setTimeout(() => {
+        if (stored) {
+          setSavedJobs(JSON.parse(stored));
+        } else {
+          setSavedJobs([1, 3, 5]);
+        }
+      }, 0);
+      return () => clearTimeout(timer);
     } else {
-      setSavedJobs([1, 3, 5]);
+      const timer = setTimeout(() => {
+        setSavedJobs([1, 3, 5]);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [session]);
 
@@ -89,63 +87,71 @@ export default function Home({ session, sessionLoading }) {
 
   useEffect(() => {
     if (sessionLoading) {
-      setAuthLoading(true);
-      return;
+      const timer = setTimeout(() => {
+        setAuthLoading(true);
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
     if (!session) {
-      setIsLoggedIn(false);
-      setUsername('');
-      setAvatarLetter('U');
-      setIsAdmin(false);
-      setAuthLoading(false);
-      return;
+      const timer = setTimeout(() => {
+        setIsLoggedIn(false);
+        setUsername('');
+        setAvatarLetter('U');
+        setIsAdmin(false);
+        setAuthLoading(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
-    setIsLoggedIn(true);
-    const userMeta = session.user.user_metadata;
-    const displayUsername = userMeta?.username || session.user.email?.split('@')[0] || 'User';
-    setUsername(displayUsername);
-    setAvatarLetter(displayUsername.charAt(0).toUpperCase());
+    const timer1 = setTimeout(() => {
+      setIsLoggedIn(true);
+      const userMeta = session.user.user_metadata;
+      const displayUsername = userMeta?.username || session.user.email?.split('@')[0] || 'User';
+      setUsername(displayUsername);
+      setAvatarLetter(displayUsername.charAt(0).toUpperCase());
+      setAuthLoading(true);
 
-    setAuthLoading(true);
-    getProfiles().then(profiles => {
-      const profile = profiles.find(p => p.id === session.user.id);
-      const isEmailAdmin = session.user.email?.toLowerCase().includes('admin');
+      getProfiles().then(profiles => {
+        const profile = profiles.find(p => p.id === session.user.id);
+        const isEmailAdmin = session.user.email?.toLowerCase().includes('admin');
 
-      if (profile) {
-        setIsAdmin(profile.role === 'admin' || profile.role === 'team_head' || isEmailAdmin);
-        setAvatarUrl(profile.avatar_url || '');
+        if (profile) {
+          setIsAdmin(profile.role === 'admin' || profile.role === 'team_head' || isEmailAdmin);
+          setAvatarUrl(profile.avatar_url || '');
 
-        // Trigger profile prompt check for regular users
-        const isProfileIncomplete = !profile.avatar_url || !profile.level;
-        const promptDismissed = sessionStorage.getItem('dismissed_profile_prompt') === 'true';
-        if (isProfileIncomplete && !promptDismissed && profile.role !== 'admin' && profile.role !== 'team_head' && !isEmailAdmin) {
-          setTimeout(() => {
-            setShowProfilePrompt(true);
-          }, 2000);
+          // Trigger profile prompt check for regular users
+          const isProfileIncomplete = !profile.avatar_url || !profile.level;
+          const promptDismissed = sessionStorage.getItem('dismissed_profile_prompt') === 'true';
+          if (isProfileIncomplete && !promptDismissed && profile.role !== 'admin' && profile.role !== 'team_head' && !isEmailAdmin) {
+            setTimeout(() => {
+              setShowProfilePrompt(true);
+            }, 2000);
+          }
+        } else {
+          // Self-heal profile record in localStorage
+          registerUser(
+            session.user.email,
+            'user123',
+            displayUsername,
+            userMeta?.full_name || displayUsername
+          ).then(() => {
+            console.log("Self-healed missing profile record successfully.");
+            setIsAdmin(isEmailAdmin);
+          }).catch(err => {
+            console.error("Failed to self-heal profile record:", err);
+            setIsAdmin(isEmailAdmin);
+          });
         }
-      } else {
-        // Self-heal profile record in localStorage
-        registerUser(
-          session.user.email,
-          'user123',
-          displayUsername,
-          userMeta?.full_name || displayUsername
-        ).then(() => {
-          console.log("Self-healed missing profile record successfully.");
-          setIsAdmin(isEmailAdmin);
-        }).catch(err => {
-          console.error("Failed to self-heal profile record:", err);
-          setIsAdmin(isEmailAdmin);
-        });
-      }
-      setAuthLoading(false);
-    }).catch(err => {
-      console.error('Error fetching profiles:', err);
-      setIsAdmin(session.user.email?.toLowerCase().includes('admin'));
-      setAuthLoading(false);
-    });
+        setAuthLoading(false);
+      }).catch(err => {
+        console.error('Error fetching profiles:', err);
+        setIsAdmin(session.user.email?.toLowerCase().includes('admin'));
+        setAuthLoading(false);
+      });
+    }, 0);
+
+    return () => clearTimeout(timer1);
   }, [session, sessionLoading]);
   const [selectedJobIdForModal, setSelectedJobIdForModal] = useState(null);
   const [selectedCommunityIdForModal, setSelectedCommunityIdForModal] = useState(null);
@@ -153,19 +159,19 @@ export default function Home({ session, sessionLoading }) {
 
   const handleViewJobDetails = (id) => {
     setActiveTab('Inductions');
-    window.location.hash = '#inductions';
+    window.history.pushState(null, '', '#inductions');
     setSelectedJobIdForModal(id);
   };
 
   const handleJoinCommunity = (id) => {
     setActiveTab('Community');
-    window.location.hash = '#communities';
+    window.history.pushState(null, '', '#communities');
     setSelectedCommunityIdForModal(id);
   };
 
   const handleViewAnnouncement = (id) => {
     setActiveTab('Announcements');
-    window.location.hash = '#announcements';
+    window.history.pushState(null, '', '#announcements');
     setSelectedAnnouncementIdForModal(id);
   };
 
@@ -221,8 +227,10 @@ export default function Home({ session, sessionLoading }) {
         }, 150);
       } else if (hash === '#login') {
         setActiveTab('Login');
+        setLoginStartFlipped(false);
       } else if (hash === '#signup' || hash === '#register') {
-        setActiveTab('Register');
+        setActiveTab('Login');
+        setLoginStartFlipped(true);
       } else if (hash === '#' || hash === '') {
         setActiveTab('Home');
       } else {
@@ -260,17 +268,26 @@ export default function Home({ session, sessionLoading }) {
 
     if (activeTab === 'AdminDashboard') {
       if (!isLoggedIn) {
-        setActiveTab('Login');
-        window.location.hash = '#login';
+        const timer = setTimeout(() => {
+          setActiveTab('Login');
+          window.history.pushState(null, '', '#login');
+        }, 0);
+        return () => clearTimeout(timer);
       } else if (!isAdmin) {
         alert('Access Denied: You do not have administrator permissions.');
-        setActiveTab('Home');
-        window.location.hash = '';
+        const timer = setTimeout(() => {
+          setActiveTab('Home');
+          window.history.pushState(null, '', '#');
+        }, 0);
+        return () => clearTimeout(timer);
       }
     } else if (activeTab === 'UserDashboard') {
       if (!isLoggedIn) {
-        setActiveTab('Login');
-        window.location.hash = '#login';
+        const timer = setTimeout(() => {
+          setActiveTab('Login');
+          window.history.pushState(null, '', '#login');
+        }, 0);
+        return () => clearTimeout(timer);
       }
     }
   }, [activeTab, isLoggedIn, isAdmin, sessionLoading, authLoading]);
@@ -279,18 +296,29 @@ export default function Home({ session, sessionLoading }) {
     window.scrollTo(0, 0);
   }, [activeTab]);
 
+  // Intersection Observer for scroll reveal animations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-revealed');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.05, rootMargin: '0px 0px -45px 0px' }
+    );
 
-  const navLinks = [
-    { name: 'Home', href: '#' },
-    { name: 'Pakistan Jobs', href: '#jobs' },
-    { name: 'Inductions', href: '#inductions' },
-    { name: 'Overseas Jobs', href: '#overseas' },
-    { name: 'Career Support', href: '#guidance' },
-    { name: 'Community', href: '#communities' },
-    { name: 'Resources', href: '#resources' },
-    { name: 'Announcements', href: '#announcements' },
-    { name: 'Our Mission', href: '#mission' }
-  ];
+    const elements = document.querySelectorAll('.reveal-on-scroll');
+    elements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [activeTab]);
+
+
+
+
 
   const stats = [
     {
@@ -319,97 +347,7 @@ export default function Home({ session, sessionLoading }) {
     }
   ];
 
-  const jobCards = [
-    {
-      id: 1,
-      company: 'PwC Pakistan',
-      logoType: 'pwc',
-      title: 'Articleship / Internship',
-      location: 'Lahore',
-      badge: 'CA Inter / ACCA',
-      deadline: '31 May 2024',
-      logoBg: 'bg-amber-500/10',
-      logoSvg: (
-        <svg className="w-10 h-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="100" height="100" rx="12" fill="#FAF5FF" />
-          <path d="M30 45h12v12H30V45z" fill="#D24626" />
-          <path d="M42 45h12v12H42V45z" fill="#EB8C00" />
-          <path d="M42 57h12v12H42V57z" fill="#F3BE12" />
-          <path d="M54 33h12v12H54V33z" fill="#40281E" />
-          <path d="M54 45h12v12H54V45z" fill="#D24626" />
-          <text x="30" y="82" fill="#1C1C1C" fontSize="16" fontWeight="bold" fontFamily="sans-serif">pwc</text>
-        </svg>
-      )
-    },
-    {
-      id: 2,
-      company: 'Deloitte Pakistan',
-      logoType: 'deloitte',
-      title: 'Audit Internship',
-      location: 'Karachi',
-      badge: 'CA Inter / ACCA',
-      deadline: '28 May 2024',
-      logoBg: 'bg-black/5',
-      logoSvg: (
-        <svg className="w-10 h-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="100" height="100" rx="12" fill="#F8FAFC" />
-          <text x="12" y="55" fill="#111827" fontSize="18" fontWeight="900" fontFamily="sans-serif">Deloitte</text>
-          <circle cx="82" cy="51" r="4" fill="#00C853" />
-        </svg>
-      )
-    },
-    {
-      id: 3,
-      company: 'EY Pakistan',
-      logoType: 'ey',
-      title: 'Assurance Internship',
-      location: 'Islamabad',
-      badge: 'CA Inter / ACCA',
-      deadline: '25 May 2024',
-      logoBg: 'bg-yellow-500/10',
-      logoSvg: (
-        <svg className="w-10 h-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="100" height="100" rx="12" fill="#FFFDE7" />
-          <path d="M25 60 L60 60 L75 30 L40 30 Z" fill="#FFE000" />
-          <text x="28" y="52" fill="#111827" fontSize="22" fontWeight="bold" fontFamily="sans-serif">EY</text>
-        </svg>
-      )
-    },
-    {
-      id: 4,
-      company: 'BDO Pakistan',
-      logoType: 'bdo',
-      title: 'Audit & Assurance',
-      location: 'Lahore',
-      badge: 'CA Inter / ACCA',
-      deadline: '25 May 2024',
-      logoBg: 'bg-blue-500/10',
-      logoSvg: (
-        <svg className="w-10 h-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="100" height="100" rx="12" fill="#EFF6FF" />
-          <path d="M15 25 H85 V30 H15 Z" fill="#D24626" />
-          <text x="22" y="65" fill="#0A5EA7" fontSize="24" fontWeight="800" fontFamily="sans-serif">BDO</text>
-        </svg>
-      )
-    },
-    {
-      id: 5,
-      company: 'KPMG Pakistan',
-      logoType: 'kpmg',
-      title: 'Audit Internship',
-      location: 'Karachi',
-      badge: 'CA Inter / ACCA',
-      deadline: '27 May 2024',
-      logoBg: 'bg-blue-900/10',
-      logoSvg: (
-        <svg className="w-10 h-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="100" height="100" rx="12" fill="#EEF2FF" />
-          <path d="M25 22h8v10h-8V22zm16 0h8v10h-8V22zm16 0h8v10h-8V22z" fill="#0A5EA7" />
-          <text x="18" y="66" fill="#0A5EA7" fontSize="22" fontWeight="900" letterSpacing="-1" fontFamily="sans-serif">KPMG</text>
-        </svg>
-      )
-    }
-  ];
+  const jobCards = INITIAL_JOBS.slice(0, 5);
 
   const guidanceItems = [
     {
@@ -896,8 +834,9 @@ export default function Home({ session, sessionLoading }) {
                     </button>
                     <button
                       onClick={() => {
-                        setActiveTab('Register');
-                        window.location.hash = '#signup';
+                        setLoginStartFlipped(true);
+                        setActiveTab('Login');
+                        window.history.pushState(null, '', '#signup');
                       }}
                       className="px-4.5 py-1.5 bg-brandGreen hover:bg-brandGreen-dark text-white rounded-lg text-xs xl:text-sm font-bold transition-all duration-300 shadow-md shadow-brandGreen/10 hover:shadow-brandGreen/20 hover:scale-[1.02] active:scale-95 whitespace-nowrap cursor-pointer"
                     >
@@ -1247,8 +1186,9 @@ export default function Home({ session, sessionLoading }) {
                     <button
                       onClick={() => {
                         setMobileMenuOpen(false);
-                        setActiveTab('Register');
-                        window.location.hash = '#signup';
+                        setLoginStartFlipped(true);
+                        setActiveTab('Login');
+                        window.history.pushState(null, '', '#signup');
                       }}
                       className="w-full text-center py-2.5 bg-brandGreen hover:bg-brandGreen-dark text-white rounded-lg text-sm font-medium transition-colors"
                     >
@@ -1262,7 +1202,8 @@ export default function Home({ session, sessionLoading }) {
         </nav>
       )}
 
-      {activeTab === 'Jobs' ? (
+      <div key={activeTab} className="animate-page-transition flex-grow flex flex-col">
+        {activeTab === 'Jobs' ? (
         <Jobs mode="jobs" initialSelectedJobId={selectedJobIdForModal} onClearInitialJob={() => setSelectedJobIdForModal(null)} savedJobs={savedJobs} onToggleSaveJob={handleToggleSaveJob} />
       ) : activeTab === 'Inductions' ? (
         <Jobs mode="inductions" initialSelectedJobId={selectedJobIdForModal} onClearInitialJob={() => setSelectedJobIdForModal(null)} savedJobs={savedJobs} onToggleSaveJob={handleToggleSaveJob} />
@@ -1284,37 +1225,22 @@ export default function Home({ session, sessionLoading }) {
         <Events />
       ) : activeTab === 'Login' ? (
         <Login
+          startFlipped={loginStartFlipped}
           onLoginSuccess={() => {
             setActiveTab('Home');
-            window.location.hash = '';
+            window.history.pushState(null, '', '#');
           }}
           onBack={() => {
             setActiveTab('Home');
-            window.location.hash = '';
+            window.history.pushState(null, '', '#');
           }}
           onSignUpRedirect={() => {
-            setActiveTab('Register');
-            window.location.hash = '#signup';
-          }}
-        />
-      ) : activeTab === 'Register' ? (
-        <Login
-          startFlipped={true}
-          onLoginSuccess={() => {
-            setActiveTab('Home');
-            window.location.hash = '';
-          }}
-          onBack={() => {
-            setActiveTab('Home');
-            window.location.hash = '';
-          }}
-          onSignUpRedirect={() => {
-            setActiveTab('Register');
-            window.location.hash = '#signup';
+            window.history.pushState(null, '', '#signup');
+            setLoginStartFlipped(true);
           }}
           onLoginRedirect={() => {
-            setActiveTab('Login');
-            window.location.hash = '#login';
+            window.history.pushState(null, '', '#login');
+            setLoginStartFlipped(false);
           }}
         />
       ) : activeTab === 'AdminDashboard' ? (
@@ -1460,7 +1386,7 @@ export default function Home({ session, sessionLoading }) {
           </section>
 
           {/* 3. Floating Stats Bar Section */}
-          <section className="relative -mt-16 z-20 px-4 sm:px-6 lg:px-8">
+          <section className="relative -mt-16 z-20 px-4 sm:px-6 lg:px-8 reveal-on-scroll">
             <div className="max-w-7xl mx-auto">
               <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 divide-y md:divide-y-0 md:divide-x divide-gray-100">
@@ -1484,7 +1410,7 @@ export default function Home({ session, sessionLoading }) {
           </section>
 
           {/* 4. Latest Induction Updates Section */}
-          <section id="jobs" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <section id="jobs" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 reveal-on-scroll">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
               <div className="flex flex-col space-y-3">
                 <span className="text-brandGreen text-xs tracking-widest font-extrabold uppercase">Opportunities</span>
@@ -1512,7 +1438,7 @@ export default function Home({ session, sessionLoading }) {
               {jobCards.map((job, idx) => (
                 <div
                   key={idx}
-                  className="bg-white rounded-2xl shadow-sm hover:shadow-xl border border-gray-100 p-5 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1"
+                  className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between premium-card-hover"
                 >
                   <div>
                     {/* Firm Logo & Company Header */}
@@ -1568,7 +1494,7 @@ export default function Home({ session, sessionLoading }) {
           </section>
 
           {/* 5. Free Guidance Section */}
-          <section id="guidance" className="py-20 bg-gray-50 border-y border-gray-100">
+          <section id="guidance" className="py-20 bg-gray-50 border-y border-gray-100 reveal-on-scroll">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
               <div className="text-center max-w-2xl mx-auto mb-16 flex flex-col items-center">
@@ -1586,7 +1512,7 @@ export default function Home({ session, sessionLoading }) {
                 {guidanceItems.map((item, idx) => (
                   <div
                     key={idx}
-                    className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300"
+                    className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between premium-card-hover"
                   >
                     <div>
                       <div className={`w-14 h-14 rounded-2xl bg-gradient-to-tr ${item.color} flex items-center justify-center mb-6 shadow-sm`}>
@@ -1613,7 +1539,7 @@ export default function Home({ session, sessionLoading }) {
           </section>
 
           {/* 6. Why Choose Us Section */}
-          <section id="why-us" className="py-24 bg-navy text-white relative">
+          <section id="why-us" className="py-24 bg-navy text-white relative reveal-on-scroll">
             {/* Subtle grid pattern mask in CSS */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,200,83,0.05),transparent)] pointer-events-none"></div>
 
@@ -1649,7 +1575,7 @@ export default function Home({ session, sessionLoading }) {
           </section>
 
           {/* 7. Communities & Resources Sections */}
-          <section className="py-24 bg-bgLight">
+          <section className="py-24 bg-bgLight reveal-on-scroll">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
 
@@ -1671,7 +1597,7 @@ export default function Home({ session, sessionLoading }) {
                       {communities.map((comm, idx) => (
                         <div
                           key={idx}
-                          className="bg-white rounded-xl p-5 border border-gray-100 hover:border-emerald-500/30 transition-colors shadow-sm"
+                          className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm premium-card-hover"
                         >
                           <div className="flex items-center justify-between mb-2">
                             <h3 className="font-bold text-gray-800 text-sm sm:text-base">{comm.name}</h3>
@@ -1708,7 +1634,7 @@ export default function Home({ session, sessionLoading }) {
                       {resources.map((res, idx) => (
                         <div
                           key={idx}
-                          className="bg-white rounded-xl p-4 border border-gray-100 flex items-center justify-between hover:shadow-md transition-shadow shadow-sm"
+                          className="bg-white rounded-xl p-4 border border-gray-100 flex items-center justify-between shadow-sm premium-card-hover"
                         >
                           <div className="flex items-center space-x-4">
                             <div className="w-10 h-10 rounded-lg bg-emerald-500/5 flex items-center justify-center flex-shrink-0">
@@ -1750,7 +1676,7 @@ export default function Home({ session, sessionLoading }) {
           </section>
 
           {/* 8. Announcements Preview Section */}
-          <section id="announcements" className="py-24 bg-gray-50 border-t border-gray-100">
+          <section id="announcements" className="py-24 bg-gray-50 border-t border-gray-100 reveal-on-scroll">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
               <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
@@ -1778,7 +1704,7 @@ export default function Home({ session, sessionLoading }) {
                 {announcements.map((item, idx) => (
                   <div
                     key={idx}
-                    className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow duration-300 relative overflow-hidden"
+                    className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between relative overflow-hidden premium-card-hover"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-4">
@@ -1816,7 +1742,7 @@ export default function Home({ session, sessionLoading }) {
           </section>
 
           {/* 9. Success Stories Section */}
-          <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 reveal-on-scroll">
 
             <div className="text-center max-w-2xl mx-auto mb-16 flex flex-col items-center">
               <span className="text-brandGreen text-xs tracking-widest font-extrabold uppercase mb-2">Testimonials</span>
@@ -1833,7 +1759,7 @@ export default function Home({ session, sessionLoading }) {
               {successStories.map((story, idx) => (
                 <div
                   key={idx}
-                  className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between relative hover:shadow-lg transition-shadow duration-300"
+                  className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between relative premium-card-hover"
                 >
                   {/* Green quote icon absolute at top right */}
                   <div className="absolute top-6 right-6 text-brandGreen/25">
@@ -1871,7 +1797,7 @@ export default function Home({ session, sessionLoading }) {
           </section>
 
           {/* 10. WhatsApp CTA Section */}
-          <section className="px-4 sm:px-6 lg:px-8 pb-16">
+          <section className="px-4 sm:px-6 lg:px-8 pb-16 reveal-on-scroll">
             <div className="max-w-7xl mx-auto">
               <div className="bg-gradient-to-r from-emerald-600 to-green-500 rounded-3xl p-8 sm:p-12 shadow-xl shadow-emerald-500/10 text-white flex flex-col lg:flex-row items-center justify-between relative overflow-hidden">
                 {/* Visual background ripple rings */}
@@ -1894,7 +1820,10 @@ export default function Home({ session, sessionLoading }) {
 
                 <div className="mt-8 lg:mt-0 z-10 w-full sm:w-auto">
                   <button
-                    onClick={() => alert("Joining WhatsApp Group...")}
+                    onClick={() => {
+                      setActiveTab('Community');
+                      window.location.hash = '#communities';
+                    }}
                     className="w-full sm:w-auto flex items-center justify-center px-8 py-4 bg-white hover:bg-gray-50 text-emerald-600 font-bold rounded-xl shadow-lg transition-all duration-200 group"
                   >
                     Join Now
@@ -1906,6 +1835,7 @@ export default function Home({ session, sessionLoading }) {
           </section>
         </>
       )}
+      </div>
 
       {/* 11. Footer */}
       {activeTab !== 'Login' && activeTab !== 'Register' && activeTab !== 'AdminDashboard' && activeTab !== 'UserDashboard' && (

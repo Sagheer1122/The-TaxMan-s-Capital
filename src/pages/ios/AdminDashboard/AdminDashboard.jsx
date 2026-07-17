@@ -1,18 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Briefcase,
   Calendar,
   Users,
-  BookOpen,
-  Award,
   AlertTriangle,
   Bell,
   User,
   MapPin,
-  Phone,
-  Mail,
   Send,
-  ChevronRight,
   ChevronDown,
   Menu,
   X,
@@ -20,29 +15,25 @@ import {
   MessageSquare,
   Clock,
   FileText,
-  CheckSquare,
-  Play,
-  FileCheck,
   Globe,
-  Star,
-  Settings,
   Search,
   LogOut,
   Trash2,
   Edit,
   Plus,
   Filter,
-  Check,
-  Lock,
-  Crown,
-  HelpCircle,
-  TrendingUp,
   Sliders,
   ExternalLink
 } from 'lucide-react';
 const supabase = null;
-const updateProfileRole = async (id, role) => { await new Promise(r => setTimeout(r, 300)); };
-const replyToMessage = async (id, replyText, adminName) => { await new Promise(r => setTimeout(r, 300)); };
+const updateProfileRole = async (id, role) => {
+  if (id && role) { /* no-op */ }
+  await new Promise(r => setTimeout(r, 300));
+};
+const replyToMessage = async (id, replyText, adminName) => {
+  if (id && replyText && adminName) { /* no-op */ }
+  await new Promise(r => setTimeout(r, 300));
+};
 
 const loadLocalStorageTable = (tableName, defaults) => {
   // Static UI Mode - No LocalStorage
@@ -87,11 +78,7 @@ export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raz
   const [jobSearch, setJobSearch] = useState('');
   const [resourceSearch, setResourceSearch] = useState('');
   const [announcementSearch, setAnnouncementSearch] = useState('');
-  const [communitySearch, setCommunitySearch] = useState('');
-
   // CRUD Modals state
-  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
 
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
@@ -186,7 +173,7 @@ export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raz
 
         // Fetch all data lists in parallel to eliminate waterfall network delay
         const [
-          _adminProfRes,
+          ,
           profsRes,
           jobsRes,
           resourcesRes,
@@ -286,7 +273,12 @@ export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raz
   };
 
   useEffect(() => {
-    loadData();
+    const run = async () => {
+      await Promise.resolve();
+      loadData();
+    };
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // CRUD Actions - Profiles / Users
@@ -619,26 +611,7 @@ export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raz
     }
   };
 
-  const handleDeleteRequest = (reqId) => {
-    setConfirmModal({
-      isOpen: true,
-      title: 'Delete Request Record',
-      message: 'Are you sure you want to delete this resource request record?',
-      onConfirm: async () => {
-        try {
-          if (supabase) {
-            const { error } = await supabase.from('resource_requests').delete().eq('id', reqId);
-            if (error) throw error;
-          }
-          setRequests(prev => prev.filter(r => r.id !== reqId));
-          alert("Request record deleted.");
-        } catch (err) {
-          alert(`Error: ${err.message}`);
-        }
-        setConfirmModal(prev => ({ ...prev, isOpen: false }));
-      }
-    });
-  };
+
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];

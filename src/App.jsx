@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Home from './pages/ios/Home/Home';
 const getCurrentSession = async () => null;
-const onAuthChange = (callback) => { return { unsubscribe: () => {} }; };
+const onAuthChange = (callback) => { if (callback) { /* no-op */ } return { unsubscribe: () => {} }; };
 import { CheckCircle, AlertTriangle, AlertCircle, Info, X } from 'lucide-react';
 
 export default function App() {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Users,
   FileText,
@@ -15,9 +15,7 @@ import {
   ChevronUp,
   X,
   Target,
-  Briefcase,
-  User,
-  Mail
+  Briefcase
 } from 'lucide-react';
 import mentorPortrait from '../../../assets/mentor_portrait.png';
 import usmanSaleem from '../../../assets/usman_saleem.png';

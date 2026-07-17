@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Users,
   MessageSquare,
@@ -8,12 +8,8 @@ import {
   AlertCircle,
   FileText,
   ChevronRight,
-  Sparkles,
   HelpCircle,
-  Clock,
   Heart,
-  ShieldCheck,
-  CheckCircle2,
   X
 } from 'lucide-react';
 import communityHeroBg from '../../../assets/community_hero_bg.png';
@@ -148,7 +144,7 @@ const DISCUSSIONS = [
 ];
 
 export default function Community({ initialCommunityId, onClearInitialCommunity }) {
-  const [communitiesList, setCommunitiesList] = useState(INITIAL_COMMUNITIES);
+  const [communitiesList] = useState(INITIAL_COMMUNITIES);
 
   // Data is now purely static
 
@@ -160,11 +156,14 @@ export default function Community({ initialCommunityId, onClearInitialCommunity 
     if (initialCommunityId) {
       const comm = communitiesList.find((c) => c.id === initialCommunityId);
       if (comm) {
-        setSelectedCommunity(comm);
-        setIsJoinModalOpen(true);
-        if (onClearInitialCommunity) {
-          onClearInitialCommunity();
-        }
+        const timer = setTimeout(() => {
+          setSelectedCommunity(comm);
+          setIsJoinModalOpen(true);
+          if (onClearInitialCommunity) {
+            onClearInitialCommunity();
+          }
+        }, 0);
+        return () => clearTimeout(timer);
       }
     }
   }, [initialCommunityId, onClearInitialCommunity, communitiesList]);

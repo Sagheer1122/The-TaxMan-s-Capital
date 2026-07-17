@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Mail,
   Lock,
@@ -13,18 +13,7 @@ import {
   Users,
   User
 } from 'lucide-react';
-const loginUser = async (email, password) => {
-  await new Promise(r => setTimeout(r, 1000));
-  if (email.includes('admin')) {
-    return { user: { id: '1', email, full_name: 'Saboor Noor', role: 'admin' } };
-  }
-  return { user: { id: '2', email, full_name: 'Student User', role: 'user' } };
-};
-
-const registerUser = async (email, password, username, full_name) => {
-  await new Promise(r => setTimeout(r, 1000));
-  return { user: { id: '2', email, full_name, username, role: 'user' } };
-};
+import { loginUser, registerUser } from '../../../services/authService';
 import goldenDoorway from '../../../assets/golden_doorway.png';
 
 export default function Login({ onLoginSuccess, onBack, startFlipped = false, onSignUpRedirect, onLoginRedirect }) {
@@ -50,13 +39,19 @@ export default function Login({ onLoginSuccess, onBack, startFlipped = false, on
 
   // Clear errors when toggling forms or typing
   useEffect(() => {
-    setErrorMsg('');
-    setSuccessMsg('');
+    const timer = setTimeout(() => {
+      setErrorMsg('');
+      setSuccessMsg('');
+    }, 0);
+    return () => clearTimeout(timer);
   }, [isFlipped, loginEmail, loginPassword, signUpEmail, signUpPassword, confirmPassword, signUpUsername, signUpName]);
 
   // Sync state if startFlipped prop changes
   useEffect(() => {
-    setIsFlipped(startFlipped);
+    const timer = setTimeout(() => {
+      setIsFlipped(startFlipped);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [startFlipped]);
 
   // Login Handler
@@ -125,25 +120,7 @@ export default function Login({ onLoginSuccess, onBack, startFlipped = false, on
     }
   };
 
-  // Google OAuth Handler
-  const handleGoogleSignIn = async () => {
-    setIsSubmitting(true);
-    setErrorMsg('');
-    setSuccessMsg('');
-    try {
-      const session = await loginUser('ahmad@taxman.com', 'admin123');
-      setSuccessMsg('Google login successful! Redirecting...');
-      setTimeout(() => {
-        if (onLoginSuccess) {
-          onLoginSuccess(session);
-        }
-      }, 1200);
-    } catch (err) {
-      setErrorMsg('Failed to sign in with Google.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+
 
   return (
     <div className="min-h-screen bg-[#02152c] text-white flex flex-col lg:flex-row font-sans selection:bg-[#00C853] selection:text-white relative overflow-hidden">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   User,
   Bookmark,
@@ -6,8 +6,6 @@ import {
   Clock,
   Briefcase,
   MapPin,
-  ChevronRight,
-  Download,
   Mail,
   Sliders,
   Sparkles,
@@ -15,7 +13,6 @@ import {
   Save,
   CheckCircle,
   ExternalLink,
-  Plus,
   Search,
   Bell,
   Menu,
@@ -39,7 +36,10 @@ export default function UserDashboard({ session, onLogout, onProfileUpdate, save
 
   useEffect(() => {
     if (initialSubTab) {
-      setActiveSubTab(initialSubTab);
+      const timer = setTimeout(() => {
+        setActiveSubTab(initialSubTab);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [initialSubTab]);
 

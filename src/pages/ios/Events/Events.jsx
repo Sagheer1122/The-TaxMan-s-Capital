@@ -1,19 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Calendar,
   Clock,
   MapPin,
   Users,
   Search,
-  Filter,
   CheckCircle2,
   X,
   ChevronRight,
   Sparkles,
-  ArrowRight,
-  GraduationCap,
-  Video,
-  Presentation,
   FileText,
   Play
 } from 'lucide-react';
@@ -38,7 +33,7 @@ export default function Events() {
   const [registeredEventIds, setRegisteredEventIds] = useState([]);
 
   // Mock Events Data
-  const [events, setEvents] = useState([
+  const [events] = useState([
     {
       id: 'evt-1',
       title: 'Big 4 Articleship CV & Interview Boot Camp',

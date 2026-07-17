@@ -1,30 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Search,
   Calendar as CalendarIcon,
   Clock,
   Bell,
-  ArrowRight,
   ShieldCheck,
   Users,
-  Video,
-  FileCheck,
-  Award,
-  Building,
   ChevronRight,
   ChevronLeft,
   ChevronDown,
   ChevronUp,
   X,
-  Sparkles,
-  Mail,
-  Send,
   MessageSquare,
-  Bookmark,
-  FileText,
-  Sliders,
-  BellRing,
-  HelpCircle
+  BellRing
 } from 'lucide-react';
 
 
@@ -232,7 +220,7 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
     }
   ];
 
-  const [timelineList, setTimelineList] = useState(INITIAL_TIMELINE_DATA);
+  const [timelineList] = useState(INITIAL_TIMELINE_DATA);
 
   // Data is now purely static
 
@@ -240,10 +228,13 @@ export default function Announcements({ initialAnnouncementId, onClearInitialAnn
     if (initialAnnouncementId) {
       const ann = timelineList.find((item) => item.id === initialAnnouncementId);
       if (ann) {
-        setSelectedAnnouncement(ann);
-        if (onClearInitialAnnouncement) {
-          onClearInitialAnnouncement();
-        }
+        const timer = setTimeout(() => {
+          setSelectedAnnouncement(ann);
+          if (onClearInitialAnnouncement) {
+            onClearInitialAnnouncement();
+          }
+        }, 0);
+        return () => clearTimeout(timer);
       }
     }
   }, [initialAnnouncementId, onClearInitialAnnouncement, timelineList]);

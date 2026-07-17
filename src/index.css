@@ -90,3 +90,47 @@
 .animate-toastSlideIn {
   animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Premium Page Transitions (Fade & Lift) */
+@keyframes pageFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-transition {
+  animation: pageFadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Premium Scroll Reveal Elements */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.reveal-on-scroll.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Premium Card Micro-interactions */
+.premium-card-hover {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.premium-card-hover:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.08), 
+              0 0 20px 0 rgba(0, 200, 83, 0.05);
+  border-color: rgba(0, 200, 83, 0.25);
+}
