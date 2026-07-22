@@ -37,6 +37,7 @@ import AdminDashboard from '../AdminDashboard/AdminDashboard';
 import UserDashboard from '../UserDashboard/UserDashboard';
 import Events from '../Events/Events';
 import Podcasts from '../Podcasts/Podcasts';
+import CareerTools from '../CareerTools/CareerTools';
 import { getProfiles, logoutUser, registerUser } from '../../../services/authService';
 import { INITIAL_JOBS } from '../../../data/jobsData';
 
@@ -187,6 +188,8 @@ export default function Home({ session, sessionLoading }) {
         setActiveTab('Overseas');
       } else if (hash === '#guidance') {
         setActiveTab('Counseling');
+      } else if (hash === '#careertools' || hash === '#career-tools' || hash === '#tools') {
+        setActiveTab('Career Tools');
       } else if (hash === '#communities') {
         setActiveTab('Community');
       } else if (hash === '#podcasts' || hash === '#videos' || hash === '#sessions') {
@@ -588,6 +591,18 @@ export default function Home({ session, sessionLoading }) {
                     >
                       Career Support
                     </a>
+                    <a
+                      href="#careertools"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setActiveTab('Career Tools');
+                        window.location.hash = '#careertools';
+                      }}
+                      className={`block px-4 py-2.5 text-xs xl:text-sm font-medium transition-colors hover:text-brandGreen hover:bg-white/5 ${activeTab === 'Career Tools' || activeTab === 'CareerTools' ? 'text-brandGreen bg-white/5' : 'text-gray-300'
+                        }`}
+                    >
+                      Career Tools & AI Hub
+                    </a>
                   </div>
                 </div>
 
@@ -966,6 +981,19 @@ export default function Home({ session, sessionLoading }) {
                   >
                     • Career Support
                   </a>
+                  <a
+                    href="#careertools"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setActiveTab('Career Tools');
+                      setMobileMenuOpen(false);
+                      window.location.hash = '#careertools';
+                    }}
+                    className={`block py-2 px-4 rounded-xl text-sm ${activeTab === 'Career Tools' || activeTab === 'CareerTools' ? 'text-brandGreen bg-white/5 font-semibold' : 'text-gray-300'
+                      }`}
+                  >
+                    • Career Tools & AI Hub
+                  </a>
                 </div>
               </div>
 
@@ -1265,6 +1293,8 @@ export default function Home({ session, sessionLoading }) {
           <Jobs mode="overseas" initialSelectedJobId={selectedJobIdForModal} onClearInitialJob={() => setSelectedJobIdForModal(null)} savedJobs={savedJobs} onToggleSaveJob={handleToggleSaveJob} />
         ) : (activeTab === 'Counseling' || activeTab === 'Career Support') ? (
           <Counseling />
+        ) : (activeTab === 'Career Tools' || activeTab === 'CareerTools') ? (
+          <CareerTools />
         ) : activeTab === 'Community' ? (
           <Community initialCommunityId={selectedCommunityIdForModal} onClearInitialCommunity={() => setSelectedCommunityIdForModal(null)} />
         ) : activeTab === 'Our Mission' ? (
@@ -2124,6 +2154,19 @@ export default function Home({ session, sessionLoading }) {
                       className="hover:text-white transition-colors"
                     >
                       Career Support
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#careertools"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setActiveTab('Career Tools');
+                        window.location.hash = '#careertools';
+                      }}
+                      className="hover:text-white transition-colors"
+                    >
+                      Career Tools & AI Hub
                     </a>
                   </li>
                   <li>

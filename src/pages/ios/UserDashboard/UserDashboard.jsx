@@ -21,7 +21,8 @@ import {
   X,
   ChevronDown,
   Globe,
-  Send
+  Send,
+  Bot
 } from 'lucide-react';
 const supabase = null;
 const getJobs = async () => [];
@@ -319,6 +320,7 @@ export default function UserDashboard({ session, onLogout, onProfileUpdate, save
         <nav className="flex-1 px-4 py-6 overflow-y-auto space-y-1.5 scrollbar-thin scrollbar-thumb-white/10">
           {[
             { id: 'Overview', label: 'My Dashboard', icon: <Sparkles className="w-4.5 h-4.5" /> },
+            { id: 'Career Tools', label: 'Career Tools & AI Hub', icon: <Bot className="w-4.5 h-4.5" /> },
             { id: 'Explore Placements', label: 'Explore Placements', icon: <Briefcase className="w-4.5 h-4.5" /> },
             { id: 'Saved Jobs', label: 'Saved Jobs', icon: <Bookmark className="w-4.5 h-4.5" />, badge: savedJobsList.length },
             { id: 'Ask Counselor', label: 'Ask Counselor', icon: <Mail className="w-4.5 h-4.5" />, badge: userQueries.filter(q => !q.reply).length },
@@ -332,6 +334,11 @@ export default function UserDashboard({ session, onLogout, onProfileUpdate, save
               <button
                 key={item.id}
                 onClick={() => {
+                  if (item.id === 'Career Tools') {
+                    if (onGoHome) onGoHome();
+                    window.location.hash = '#careertools';
+                    return;
+                  }
                   setActiveSubTab(item.id);
                   setMobileSidebarOpen(false);
                 }}
