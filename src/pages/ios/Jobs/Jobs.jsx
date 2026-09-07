@@ -210,7 +210,7 @@ export default function Jobs({
   const [firmSearchQuery, setFirmSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('Latest First');
   const [currentPage, setCurrentPage] = useState(1);
-  const [localSavedJobs, setLocalSavedJobs] = useState([1, 3, 5]);
+  const [localSavedJobs, setLocalSavedJobs] = useState([]);
   const savedJobs = propsSavedJobs !== undefined ? propsSavedJobs : localSavedJobs;
   const [selectedJob, setSelectedJob] = useState(null);
   useBodyScrollLock(!!selectedJob);

@@ -194,7 +194,7 @@ export default function Home({ session, sessionLoading }) {
   const [isAdmin, setIsAdmin] = useState(initialIsAdmin);
   const [avatarUrl, setAvatarUrl] = useState(() => initialUser?.avatar_url || initialUser?.profileImage || '');
   const [authLoading, setAuthLoading] = useState(() => !initialSync);
-  const [savedJobs, setSavedJobs] = useState([1, 3, 5]);
+  const [savedJobs, setSavedJobs] = useState([]);
   const [showProfilePrompt, setShowProfilePrompt] = useState(false);
   const [userDashboardTab, setUserDashboardTab] = useState('Overview');
   const [notifications, setNotifications] = useState([]);
@@ -288,15 +288,21 @@ export default function Home({ session, sessionLoading }) {
       try {
         const stored = localStorage.getItem(`saved_jobs_${session.user.id}`);
         if (stored) {
-          setSavedJobs(JSON.parse(stored));
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length === 3 && parsed[0] === 1 && parsed[1] === 3 && parsed[2] === 5) {
+            localStorage.setItem(`saved_jobs_${session.user.id}`, JSON.stringify([]));
+            setSavedJobs([]);
+          } else {
+            setSavedJobs(Array.isArray(parsed) ? parsed : []);
+          }
         } else {
-          setSavedJobs([1, 3, 5]);
+          setSavedJobs([]);
         }
       } catch {
-        setSavedJobs([1, 3, 5]);
+        setSavedJobs([]);
       }
     } else {
-      setSavedJobs([1, 3, 5]);
+      setSavedJobs([]);
     }
   }, [session]);
 

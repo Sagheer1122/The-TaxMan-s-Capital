@@ -671,8 +671,17 @@ export default function UserDashboard({ session, onLogout, onProfileUpdate, save
                 ))}
 
                 {savedJobsList.length === 0 && (
-                  <div className="col-span-full bg-white rounded-3xl p-12 border border-gray-100 text-center text-gray-400 italic">
-                    You have not bookmarked any jobs yet. Go to the jobs search board to find placements!
+                  <div className="col-span-full bg-white rounded-3xl p-12 border border-gray-100 text-center text-gray-400 flex flex-col items-center justify-center space-y-3">
+                    <Bookmark className="w-10 h-10 text-gray-300 stroke-[1.5]" />
+                    <p className="font-semibold text-gray-500 text-sm">You haven't bookmarked any jobs yet.</p>
+                    <p className="text-xs text-gray-400 max-w-sm">Browse domestic opportunities, Big 4 trainee inductions, and overseas placements to save them here.</p>
+                    <button
+                      onClick={() => setActiveSubTab('Explore Placements')}
+                      className="mt-2 px-4 py-2 bg-brandGreen hover:bg-brandGreen-dark text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-500/10 inline-flex items-center space-x-1.5 cursor-pointer"
+                    >
+                      <Briefcase className="w-3.5 h-3.5" />
+                      <span>Explore Placements</span>
+                    </button>
                   </div>
                 )}
               </div>
