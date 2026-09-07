@@ -118,14 +118,11 @@ class ApiClient {
       if (endpointLower.includes('/cv')) {
         return { success: true, message: 'CV processed successfully' };
       }
-      if (endpointLower.includes('/ai/control-center')) {
+      if (endpointLower.includes('/ai/control-center/stats')) {
         return { success: true, data: {} };
       }
-      if (endpointLower.includes('/ai/')) {
-        return { success: true, data: [] };
-      }
 
-      // For auth login/register and AI/interview endpoints in static mode, throw clean offline error
+      // For auth login/register, AI orchestrator/agents, and interview endpoints in static mode, throw clean offline error so service layer executes rich offline engine
       const offlineError = new Error('Static frontend mode (backend endpoint not configured)');
       offlineError.status = 405;
       offlineError.isOffline = true;

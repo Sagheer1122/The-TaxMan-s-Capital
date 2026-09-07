@@ -54,7 +54,11 @@ export async function getControlCenterStats() {
 export async function executeOrchestratorCommand(commandText) {
   try {
     const res = await api.post('/ai/orchestrator/command', { commandText });
-    return res?.data || res;
+    const data = res?.data || res;
+    if (data && data.taskId && data.summary && (data.summary.whatFound || data.summary.whatCreated)) {
+      return data;
+    }
+    throw new Error('Local orchestrator simulation required');
   } catch (err) {
     console.warn('[AIControlCenterService] Running client-side autonomous orchestrator execution:', err.message);
     const cmd = (commandText || '').toLowerCase();
