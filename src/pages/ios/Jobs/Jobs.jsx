@@ -28,6 +28,7 @@ import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
 import PortalModal from '../../../components/PortalModal';
 import { api } from '../../../services/api';
 import { requireAuth } from '../../../services/authService';
+import { toggleBookmark as toggleUnifiedBookmark, getBookmarks, onBookmarksChange } from '../../../services/bookmarkService';
 
 const getJobs = async () => {
   try {
@@ -210,10 +211,19 @@ export default function Jobs({
   const [firmSearchQuery, setFirmSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('Latest First');
   const [currentPage, setCurrentPage] = useState(1);
-  const [localSavedJobs, setLocalSavedJobs] = useState([]);
+  const [localSavedJobs, setLocalSavedJobs] = useState(() => getBookmarks('job').map(b => b.id));
   const savedJobs = propsSavedJobs !== undefined ? propsSavedJobs : localSavedJobs;
   const [selectedJob, setSelectedJob] = useState(null);
   useBodyScrollLock(!!selectedJob);
+
+  useEffect(() => {
+    if (propsSavedJobs === undefined) {
+      const unsub = onBookmarksChange(() => {
+        setLocalSavedJobs(getBookmarks('job').map(b => b.id));
+      });
+      return unsub;
+    }
+  }, [propsSavedJobs]);
 
   useEffect(() => {
     if (initialSelectedJobId) {
@@ -243,11 +253,19 @@ export default function Jobs({
       onToggleSaveJob(id);
       return;
     }
-    if (localSavedJobs.includes(id)) {
-      setLocalSavedJobs(localSavedJobs.filter((item) => item !== id));
-    } else {
-      setLocalSavedJobs([...localSavedJobs, id]);
-    }
+    const job = jobsList.find(j => j.id === id) || { id, title: 'Job Opportunity' };
+    toggleUnifiedBookmark({
+      id: job.id,
+      title: job.title,
+      company: job.company,
+      location: job.location,
+      city: job.city || job.location,
+      country: job.country,
+      level: job.level,
+      jobType: job.jobType,
+      workMode: job.workMode,
+      deadline: job.deadline
+    }, 'job');
   };
 
   // Clear all filters
@@ -830,11 +848,11 @@ export default function Jobs({
                   Search
                 </button>
                 <button
-                  onClick={() => alert(`Saved jobs IDs: ${savedJobs.join(', ')}`)}
+                  onClick={() => alert(`Bookmarked items: ${savedJobs.length}`)}
                   className="w-full sm:w-auto flex items-center justify-center px-4 py-2 border border-brandGreen/20 bg-emerald-500/[0.04] text-brandGreen hover:bg-emerald-500/10 rounded-lg text-xs font-bold transition-colors cursor-pointer"
                 >
                   <Bookmark className="w-3.5 h-3.5 mr-1.5 fill-current" />
-                  Saved Jobs ({savedJobs.length})
+                  Bookmarks ({savedJobs.length})
                 </button>
               </div>
             </div>
@@ -1421,7 +1439,7 @@ export default function Jobs({
                   }`}
                 >
                   <Bookmark className={`w-4 h-4 ${savedJobs.includes(selectedJob.id) ? 'fill-current' : ''}`} />
-                  <span>{savedJobs.includes(selectedJob.id) ? 'Saved' : 'Save Job'}</span>
+                  <span>{savedJobs.includes(selectedJob.id) ? 'Bookmarked' : 'Bookmark'}</span>
                 </button>
 
                 <button

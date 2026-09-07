@@ -13,6 +13,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { fetchBlogs } from '../../../services/blogService';
+import { toggleBookmark as toggleUnifiedBookmark, getBookmarks, onBookmarksChange } from '../../../services/bookmarkService';
 import { AntigravityCanvas } from '../../../components/motion/MotionSystem';
 import BlogArticle from './BlogArticle';
 
@@ -23,7 +24,7 @@ const CATEGORIES = [
   'ACCA Careers',
   'Tax & Audit',
   'Study Tips',
-  'Industry Insights'
+  'Mentorship'
 ];
 
 export default function Blog({ onNavigateTab }) {
@@ -33,13 +34,15 @@ export default function Blog({ onNavigateTab }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [bookmarkedIds, setBookmarkedIds] = useState(() => {
-    try {
-      const saved = localStorage.getItem('thetaxman_bookmarked_blogs');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
+    return getBookmarks().filter(b => b.type === 'blog').map(b => String(b.itemId || b.id));
   });
+
+  useEffect(() => {
+    const sub = onBookmarksChange((all) => {
+      setBookmarkedIds(all.filter(b => b.type === 'blog').map(b => String(b.itemId || b.id)));
+    });
+    return () => sub.unsubscribe();
+  }, []);
 
   useEffect(() => {
     loadBlogs();
@@ -59,15 +62,22 @@ export default function Blog({ onNavigateTab }) {
 
   const toggleBookmark = (id, e) => {
     if (e) e.stopPropagation();
-    const updated = bookmarkedIds.includes(id)
-      ? bookmarkedIds.filter(bId => bId !== id)
-      : [...bookmarkedIds, id];
-    setBookmarkedIds(updated);
-    try {
-      localStorage.setItem('thetaxman_bookmarked_blogs', JSON.stringify(updated));
-    } catch (err) {
-      console.warn('Failed to save bookmark:', err);
-    }
+    const blog = blogs.find(b => (b.id === id || b._id === id || String(b.id) === String(id)));
+    const targetBlog = blog || { id, title: `Career Article #${id}`, category: 'Career Guidance' };
+
+    const result = toggleUnifiedBookmark({
+      id: id,
+      title: targetBlog.title,
+      subtitle: targetBlog.author || "The TaxMan's Capital Editorial",
+      category: targetBlog.category || 'Career Guidance',
+      duration: targetBlog.readTime ? `${targetBlog.readTime} min read` : '5 min read',
+      link: `/blog/${targetBlog.slug || id}`
+    }, 'blog');
+
+    const idStr = String(id);
+    setBookmarkedIds(prev =>
+      result.isBookmarked ? [...prev, idStr] : prev.filter(bId => bId !== idStr)
+    );
   };
 
   // Synchronize browser URL and Back/Forward buttons

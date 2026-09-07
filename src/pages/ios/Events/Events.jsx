@@ -4,6 +4,7 @@ import PortalModal from '../../../components/PortalModal';
 import { api } from '../../../services/api';
 import { submitContactForm } from '../../../services/submissionService';
 import { requireAuth } from '../../../services/authService';
+import { toggleBookmark, isBookmarked, getBookmarks, onBookmarksChange } from '../../../services/bookmarkService';
 import {
   Calendar,
   Clock,
@@ -15,7 +16,8 @@ import {
   ChevronRight,
   Sparkles,
   FileText,
-  Play
+  Play,
+  Bookmark
 } from 'lucide-react';
 import mentorsDiscussing from '../../../assets/mentors_discussing.png';
 
@@ -43,6 +45,40 @@ export default function Events() {
       return [];
     }
   });
+
+  // Unified Bookmark State for Events
+  const [bookmarkedEventIds, setBookmarkedEventIds] = useState(() => {
+    return getBookmarks().filter(b => b.type === 'event').map(b => String(b.itemId || b.id));
+  });
+
+  useEffect(() => {
+    const sub = onBookmarksChange((all) => {
+      setBookmarkedEventIds(all.filter(b => b.type === 'event').map(b => String(b.itemId || b.id)));
+    });
+    return () => sub.unsubscribe();
+  }, []);
+
+  const handleToggleEventBookmark = (evt, e) => {
+    if (e) e.stopPropagation();
+    if (!requireAuth('save or bookmark webinars and events to your library')) {
+      return;
+    }
+    const result = toggleBookmark({
+      id: evt.id,
+      title: evt.title,
+      subtitle: evt.speaker?.name ? `${evt.speaker.name} (${evt.speaker.organization})` : 'The TaxMan Event',
+      category: evt.category || 'Webinar',
+      deadline: evt.date || '',
+      location: evt.platform || 'Zoom Interactive',
+      duration: evt.duration || '',
+      link: '/events'
+    }, 'event');
+
+    const evtIdStr = String(evt.id);
+    setBookmarkedEventIds(prev =>
+      result.isBookmarked ? [...prev, evtIdStr] : prev.filter(id => id !== evtIdStr)
+    );
+  };
 
   // Events Data
   const DEFAULT_EVENTS = [
@@ -442,11 +478,25 @@ export default function Events() {
                           {evt.category}
                         </span>
                         
-                        <div className="flex items-center space-x-1.5">
-                          <span className={`w-1.5 h-1.5 rounded-full ${isUpcoming ? 'bg-brandGreen animate-pulse' : 'bg-gray-500'}`} />
-                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                            {evt.status}
-                          </span>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={(e) => handleToggleEventBookmark(evt, e)}
+                            title={bookmarkedEventIds.includes(String(evt.id)) ? 'Remove bookmark' : 'Bookmark webinar'}
+                            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+                              bookmarkedEventIds.includes(String(evt.id))
+                                ? 'bg-amber-500/20 border-amber-400/50 text-amber-400'
+                                : 'border-white/10 hover:border-brandGreen hover:bg-white/5 text-gray-400 hover:text-white'
+                            }`}
+                          >
+                            <Bookmark className={`w-3.5 h-3.5 ${bookmarkedEventIds.includes(String(evt.id)) ? 'fill-current' : ''}`} />
+                          </button>
+
+                          <div className="flex items-center space-x-1.5">
+                            <span className={`w-1.5 h-1.5 rounded-full ${isUpcoming ? 'bg-brandGreen animate-pulse' : 'bg-gray-500'}`} />
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                              {evt.status}
+                            </span>
+                          </div>
                         </div>
                       </div>
 

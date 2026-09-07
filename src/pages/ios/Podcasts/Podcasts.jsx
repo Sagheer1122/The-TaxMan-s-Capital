@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { requireAuth } from '../../../services/authService';
+import { toggleBookmark as toggleUnifiedBookmark, getBookmarks, onBookmarksChange } from '../../../services/bookmarkService';
 import {
   Play,
   Headphones,
@@ -32,9 +33,18 @@ export default function Podcasts() {
   const [activeTypeFilter, setActiveTypeFilter] = useState('All');
   const [activeQualFilter, setActiveQualFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [bookmarkedIds, setBookmarkedIds] = useState([]);
+  const [bookmarkedIds, setBookmarkedIds] = useState(() => {
+    return getBookmarks().filter(b => b.type === 'podcast').map(b => String(b.itemId || b.id));
+  });
   const [likedIds, setLikedIds] = useState([]);
   const [toastMessage, setToastMessage] = useState(null);
+
+  useEffect(() => {
+    const sub = onBookmarksChange((all) => {
+      setBookmarkedIds(all.filter(b => b.type === 'podcast').map(b => String(b.itemId || b.id)));
+    });
+    return () => sub.unsubscribe();
+  }, []);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -49,13 +59,21 @@ export default function Podcasts() {
     if (!requireAuth('save videos to your watch later list')) {
       return;
     }
-    if (bookmarkedIds.includes(id)) {
-      setBookmarkedIds(prev => prev.filter(item => item !== id));
-      showToast('Removed from saved list');
-    } else {
-      setBookmarkedIds(prev => [...prev, id]);
-      showToast('Saved to your watch later list!');
-    }
+    const ep = (episodes || []).find(item => item.id === id) || { id, title: `Podcast Episode #${id}` };
+    const result = toggleUnifiedBookmark({
+      id: id,
+      title: ep.title,
+      subtitle: ep.speaker || 'Saboor Ahmad CA',
+      category: ep.type || ep.qualification || 'Masterclass',
+      duration: ep.duration || '',
+      link: '/podcasts'
+    }, 'podcast');
+
+    const idStr = String(id);
+    setBookmarkedIds(prev =>
+      result.isBookmarked ? [...prev, idStr] : prev.filter(item => item !== idStr)
+    );
+    showToast(result.isBookmarked ? 'Saved to your Bookmarks library!' : 'Removed from Bookmarks');
   };
 
   const toggleLike = (id, e) => {

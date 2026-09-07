@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
 import PortalModal from '../../../components/PortalModal';
 import {
@@ -23,10 +23,17 @@ import {
   Globe,
   Send,
   Bot,
-  ArrowRight
+  ArrowRight,
+  BookOpen,
+  Video,
+  Calendar,
+  Trash2,
+  Download,
+  Filter
 } from 'lucide-react';
 import { updateProfile } from '../../../services/authService';
 import { submitContactForm, getMyCounselingQueries } from '../../../services/submissionService';
+import { getBookmarks, removeBookmark, clearAllBookmarks, onBookmarksChange } from '../../../services/bookmarkService';
 import DualMediaUpload from '../../../components/common/DualMediaUpload';
 import { INITIAL_JOBS } from '../../../data/jobsData';
 import NotificationPanel from '../../../components/NotificationPanel';
@@ -46,12 +53,28 @@ const getMessages = async () => {
 const updateUserProfile = updateProfile;
 const submitMessage = submitContactForm;
 
-export default function UserDashboard({ session, onLogout, onProfileUpdate, savedJobs = [], onRemoveSavedJob, onGoHome, initialSubTab = 'Overview' }) {
-  const [activeSubTab, setActiveSubTab] = useState(initialSubTab);
+export default function UserDashboard({ session, onLogout, onProfileUpdate, savedJobs = [], onRemoveSavedJob, onGoHome, onNavigateTab, initialSubTab = 'Overview' }) {
+  const [activeSubTab, setActiveSubTab] = useState(() => {
+    if (initialSubTab === 'Saved Jobs' || initialSubTab === 'Bookmarks') return 'Bookmarks';
+    return initialSubTab;
+  });
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [headerDropdownOpen, setHeaderDropdownOpen] = useState(false);
   const [notificationsDropdownOpen, setNotificationsDropdownOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+
+  // Unified Bookmarks State
+  const [allBookmarks, setAllBookmarks] = useState(() => getBookmarks(session?.user?.id));
+  const [bookmarkCategoryFilter, setBookmarkCategoryFilter] = useState('all');
+  const [bookmarkSearchQuery, setBookmarkSearchQuery] = useState('');
+
+  useEffect(() => {
+    setAllBookmarks(getBookmarks(session?.user?.id));
+    const sub = onBookmarksChange((updated) => {
+      setAllBookmarks(updated);
+    });
+    return () => sub.unsubscribe();
+  }, [session]);
 
   useEffect(() => {
     getNotifications().then(setNotifications).catch(() => {});
@@ -331,14 +354,14 @@ export default function UserDashboard({ session, onLogout, onProfileUpdate, save
             { id: 'Overview', label: 'My Dashboard', icon: <Sparkles className="w-4.5 h-4.5" /> },
             { id: 'Career Tools', label: 'Career Tools & AI Hub', icon: <Bot className="w-4.5 h-4.5" /> },
             { id: 'Explore Placements', label: 'Explore Placements', icon: <Briefcase className="w-4.5 h-4.5" /> },
-            { id: 'Saved Jobs', label: 'Saved Jobs', icon: <Bookmark className="w-4.5 h-4.5" />, badge: savedJobsList.length },
+            { id: 'Bookmarks', label: 'Bookmarks', icon: <Bookmark className="w-4.5 h-4.5" />, badge: allBookmarks.length },
             { id: 'Ask Counselor', label: 'Ask Counselor', icon: <Mail className="w-4.5 h-4.5" />, badge: userQueries.filter(q => !q.reply).length },
             { id: 'Study Circles', label: 'Study Circles', icon: <Globe className="w-4.5 h-4.5" /> },
             { id: 'My Requests', label: 'Resource Requests', icon: <FileText className="w-4.5 h-4.5" />, badge: requests.length },
             { id: 'Firm Announcements', label: 'Firm Announcements', icon: <Clock className="w-4.5 h-4.5" /> },
             { id: 'Settings', label: 'Profile Settings', icon: <Sliders className="w-4.5 h-4.5" /> }
           ].map(item => {
-            const isActive = activeSubTab === item.id;
+            const isActive = activeSubTab === item.id || (item.id === 'Bookmarks' && activeSubTab === 'Saved Jobs');
             return (
               <button
                 key={item.id}
@@ -554,7 +577,7 @@ export default function UserDashboard({ session, onLogout, onProfileUpdate, save
                     Hello, {profile.full_name}! 👋
                   </h1>
                   <p className="text-gray-300 text-xs sm:text-sm font-medium max-w-xl">
-                    Track your bookmarked jobs, see preparation resources recommended for your **{profile.level}** stage, and monitor your submitted study material requests.
+                    Manage your bookmarked jobs, study resources, articles, masterclasses, and counseling requests all in one place.
                   </p>
                 </div>
               </div>
@@ -563,7 +586,7 @@ export default function UserDashboard({ session, onLogout, onProfileUpdate, save
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 {[
                   { label: 'Educational Level', value: profile.level, sub: 'Updated stage', icon: <Sliders className="w-5.5 h-5.5 text-blue-500" />, bg: 'bg-blue-500/10' },
-                  { label: 'Bookmarked Jobs', value: savedJobsList.length, sub: 'Saved opportunities', icon: <Bookmark className="w-5.5 h-5.5 text-amber-500" />, bg: 'bg-amber-500/10' },
+                  { label: 'Saved Bookmarks', value: allBookmarks.length, sub: 'Items in your library', icon: <Bookmark className="w-5.5 h-5.5 text-amber-500" />, bg: 'bg-amber-500/10' },
                   { label: 'Requested Resources', value: requests.length, sub: 'Study files requested', icon: <FileText className="w-5.5 h-5.5 text-emerald-500" />, bg: 'bg-emerald-500/10' },
                 ].map((stat, i) => (
                   <div key={i} className="bg-white rounded-3xl p-6 border border-gray-100 flex items-center justify-between shadow-sm">
@@ -632,59 +655,273 @@ export default function UserDashboard({ session, onLogout, onProfileUpdate, save
             </div>
           )}
 
-          {/* VIEW: SAVED JOBS */}
-          {activeSubTab === 'Saved Jobs' && !loading && (
+          {/* VIEW: BOOKMARKS & SAVED LIBRARY */}
+          {(activeSubTab === 'Bookmarks' || activeSubTab === 'Saved Jobs') && !loading && (
             <div className="space-y-6 animate-fadeIn text-left">
-              <div>
-                <h1 className="text-2xl font-black text-navy">Saved Job Placements</h1>
-                <p className="text-xs text-gray-400 mt-1 font-semibold">Your bookmarked career opportunities and inductions.</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {savedJobsList.map((job) => (
-                  <div key={job.id} className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="px-2.5 py-0.5 bg-brandGreen/10 text-[9px] font-black text-brandGreen-dark rounded-md uppercase">
-                          {job.jobType}
-                        </span>
-                        <button
-                          onClick={() => {
-                            if (onRemoveSavedJob) onRemoveSavedJob(job.id);
-                          }}
-                          className="text-[10px] text-red-500 hover:text-red-600 font-bold"
-                        >
-                          Remove Bookmark
-                        </button>
-                      </div>
-                      <h3 className="text-base font-black text-navy mt-3 leading-tight">{job.title}</h3>
-                      <p className="text-xs font-bold text-gray-400 mt-1">{job.company}</p>
-                      <div className="flex items-center text-gray-400 text-xs mt-3 space-x-2">
-                        <MapPin className="w-3.5 h-3.5" />
-                        <span>{job.location} • {job.level}</span>
-                      </div>
-                    </div>
-                    <div className="mt-5 pt-3 border-t border-gray-50 flex items-center justify-between text-xs">
-                      <span className="text-red-500 font-extrabold">DL: {job.deadline}</span>
-                    </div>
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="px-2.5 py-0.5 bg-brandGreen/10 text-brandGreen text-[10px] font-black tracking-wider uppercase rounded-md border border-brandGreen/20">
+                      Personal Archive
+                    </span>
+                    <span className="text-xs font-bold text-gray-400">
+                      • {allBookmarks.length} total saved item{allBookmarks.length !== 1 ? 's' : ''}
+                    </span>
                   </div>
-                ))}
+                  <h1 className="text-2xl sm:text-3xl font-black text-navy mt-1">Saved Library & Bookmarks</h1>
+                  <p className="text-xs text-gray-400 mt-1 font-semibold">
+                    Manage and quickly access your saved job inductions, study notes, articles, podcasts, and upcoming webinars.
+                  </p>
+                </div>
 
-                {savedJobsList.length === 0 && (
-                  <div className="col-span-full bg-white rounded-3xl p-12 border border-gray-100 text-center text-gray-400 flex flex-col items-center justify-center space-y-3">
-                    <Bookmark className="w-10 h-10 text-gray-300 stroke-[1.5]" />
-                    <p className="font-semibold text-gray-500 text-sm">You haven't bookmarked any jobs yet.</p>
-                    <p className="text-xs text-gray-400 max-w-sm">Browse domestic opportunities, Big 4 trainee inductions, and overseas placements to save them here.</p>
-                    <button
-                      onClick={() => setActiveSubTab('Explore Placements')}
-                      className="mt-2 px-4 py-2 bg-brandGreen hover:bg-brandGreen-dark text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-500/10 inline-flex items-center space-x-1.5 cursor-pointer"
-                    >
-                      <Briefcase className="w-3.5 h-3.5" />
-                      <span>Explore Placements</span>
-                    </button>
-                  </div>
+                {allBookmarks.length > 0 && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Are you sure you want to clear all your bookmarked items?')) {
+                        const updated = clearAllBookmarks(session?.user?.id);
+                        setAllBookmarks(updated);
+                      }
+                    }}
+                    className="self-start sm:self-auto px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition-all border border-red-200/60 inline-flex items-center space-x-1.5 cursor-pointer shadow-sm"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Clear All Bookmarks</span>
+                  </button>
                 )}
               </div>
+
+              {/* Category Filter Pills & Search Bar */}
+              <div className="bg-white rounded-2xl p-3 border border-gray-100 shadow-sm space-y-3">
+                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                  {/* Category Pills */}
+                  <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+                    {[
+                      { id: 'all', label: 'All Items', icon: <Sparkles className="w-3.5 h-3.5" />, count: allBookmarks.length },
+                      { id: 'job', label: 'Jobs & Inductions', icon: <Briefcase className="w-3.5 h-3.5" />, count: allBookmarks.filter(b => b.type === 'job').length },
+                      { id: 'resource', label: 'Study Resources', icon: <BookOpen className="w-3.5 h-3.5" />, count: allBookmarks.filter(b => b.type === 'resource').length },
+                      { id: 'blog', label: 'Blogs & Articles', icon: <FileText className="w-3.5 h-3.5" />, count: allBookmarks.filter(b => b.type === 'blog').length },
+                      { id: 'podcast', label: 'Podcasts & Videos', icon: <Video className="w-3.5 h-3.5" />, count: allBookmarks.filter(b => b.type === 'podcast').length },
+                      { id: 'event', label: 'Events & Webinars', icon: <Calendar className="w-3.5 h-3.5" />, count: allBookmarks.filter(b => b.type === 'event').length },
+                    ].map(cat => {
+                      const isCatActive = bookmarkCategoryFilter === cat.id;
+                      return (
+                        <button
+                          key={cat.id}
+                          onClick={() => setBookmarkCategoryFilter(cat.id)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center space-x-1.5 cursor-pointer ${
+                            isCatActive
+                              ? 'bg-brandGreen text-white shadow-md shadow-emerald-500/20'
+                              : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-navy border border-gray-100'
+                          }`}
+                        >
+                          <span>{cat.icon}</span>
+                          <span>{cat.label}</span>
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                            isCatActive ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'
+                          }`}>
+                            {cat.count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Search within Bookmarks */}
+                  <div className="relative flex-shrink-0 md:w-64">
+                    <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Search bookmarks..."
+                      value={bookmarkSearchQuery}
+                      onChange={(e) => setBookmarkSearchQuery(e.target.value)}
+                      className="w-full pl-8 pr-7 py-1.5 bg-[#F8F9FB] border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-brandGreen"
+                    />
+                    {bookmarkSearchQuery && (
+                      <button
+                        onClick={() => setBookmarkSearchQuery('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bookmarks Grid List */}
+              {(() => {
+                const displayed = allBookmarks.filter(item => {
+                  const matchesCat = bookmarkCategoryFilter === 'all' || item.type === bookmarkCategoryFilter;
+                  const q = bookmarkSearchQuery.trim().toLowerCase();
+                  const matchesQuery = !q ||
+                    item.title?.toLowerCase().includes(q) ||
+                    item.subtitle?.toLowerCase().includes(q) ||
+                    item.category?.toLowerCase().includes(q) ||
+                    item.location?.toLowerCase().includes(q);
+                  return matchesCat && matchesQuery;
+                });
+
+                if (displayed.length === 0) {
+                  return (
+                    <div className="bg-white rounded-3xl p-12 border border-gray-100 text-center flex flex-col items-center justify-center space-y-4 shadow-sm">
+                      <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-brandGreen">
+                        <Bookmark className="w-7 h-7 stroke-[1.8]" />
+                      </div>
+                      <div className="space-y-1 max-w-sm">
+                        <h3 className="font-black text-navy text-base">
+                          {bookmarkSearchQuery
+                            ? 'No matching bookmarks found'
+                            : bookmarkCategoryFilter === 'all'
+                            ? 'Your Saved Library is Empty'
+                            : `No Saved ${bookmarkCategoryFilter === 'job' ? 'Jobs' : bookmarkCategoryFilter === 'resource' ? 'Resources' : bookmarkCategoryFilter === 'blog' ? 'Blogs' : bookmarkCategoryFilter === 'podcast' ? 'Podcasts' : 'Events'} Yet`}
+                        </h3>
+                        <p className="text-xs text-gray-400 leading-relaxed font-medium">
+                          {bookmarkSearchQuery
+                            ? 'Try searching with a different keyword or switch categories.'
+                            : 'Click the bookmark icon across any job posting, study note, article, podcast, or webinar to build your library.'}
+                        </p>
+                      </div>
+
+                      <div className="pt-2 flex flex-wrap gap-2 justify-center">
+                        <button
+                          onClick={() => {
+                            if (onGoHome) onGoHome();
+                            window.history.pushState(null, '', '/jobs');
+                            window.dispatchEvent(new PopStateEvent('popstate'));
+                          }}
+                          className="px-3.5 py-2 bg-brandGreen hover:bg-brandGreen-dark text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-500/10 inline-flex items-center space-x-1.5 cursor-pointer"
+                        >
+                          <Briefcase className="w-3.5 h-3.5" />
+                          <span>Explore Placements</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (onGoHome) onGoHome();
+                            window.history.pushState(null, '', '/resources');
+                            window.dispatchEvent(new PopStateEvent('popstate'));
+                          }}
+                          className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/10 inline-flex items-center space-x-1.5 cursor-pointer"
+                        >
+                          <BookOpen className="w-3.5 h-3.5" />
+                          <span>Study Resources</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (onGoHome) onGoHome();
+                            window.history.pushState(null, '', '/podcasts');
+                            window.dispatchEvent(new PopStateEvent('popstate'));
+                          }}
+                          className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-500/10 inline-flex items-center space-x-1.5 cursor-pointer"
+                        >
+                          <Video className="w-3.5 h-3.5" />
+                          <span>Podcasts & Videos</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {displayed.map((item) => {
+                      // Category Badge Styles
+                      const typeConfig = {
+                        job: { label: 'Job Placement', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: <Briefcase className="w-3 h-3" /> },
+                        resource: { label: 'Study Resource', color: 'bg-blue-50 text-blue-700 border-blue-200', icon: <BookOpen className="w-3 h-3" /> },
+                        blog: { label: 'Career Article', color: 'bg-purple-50 text-purple-700 border-purple-200', icon: <FileText className="w-3 h-3" /> },
+                        podcast: { label: 'Podcast Masterclass', color: 'bg-red-50 text-red-700 border-red-200', icon: <Video className="w-3 h-3" /> },
+                        event: { label: 'Live Webinar', color: 'bg-amber-50 text-amber-700 border-amber-200', icon: <Calendar className="w-3 h-3" /> }
+                      }[item.type] || { label: 'Saved Item', color: 'bg-gray-50 text-gray-700 border-gray-200', icon: <Bookmark className="w-3 h-3" /> };
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-brandGreen/30 transition-all flex flex-col justify-between group"
+                        >
+                          <div>
+                            {/* Top Badge & Remove Button */}
+                            <div className="flex items-center justify-between gap-2">
+                              <span className={`px-2.5 py-1 text-[10px] font-black rounded-lg border uppercase inline-flex items-center space-x-1 ${typeConfig.color}`}>
+                                {typeConfig.icon}
+                                <span>{typeConfig.label}</span>
+                              </span>
+                              <button
+                                onClick={() => {
+                                  const updated = removeBookmark(item.id, session?.user?.id);
+                                  setAllBookmarks(updated);
+                                }}
+                                title="Remove from bookmarks"
+                                className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            {/* Title & Subtitle */}
+                            <h3 className="text-base font-black text-navy mt-3 leading-snug group-hover:text-brandGreen transition-colors line-clamp-2">
+                              {item.title}
+                            </h3>
+                            <p className="text-xs font-bold text-gray-400 mt-1 truncate">
+                              {item.subtitle}
+                            </p>
+
+                            {/* Metadata Pills */}
+                            <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold text-gray-500">
+                              {item.category && (
+                                <span className="px-2 py-0.5 bg-[#F8F9FB] rounded-md border border-gray-100">
+                                  {item.category}
+                                </span>
+                              )}
+                              {item.location && (
+                                <span className="inline-flex items-center space-x-1 text-gray-400">
+                                  <MapPin className="w-3 h-3" />
+                                  <span>{item.location}</span>
+                                </span>
+                              )}
+                              {item.deadline && (
+                                <span className="text-red-500 font-extrabold">
+                                  DL: {item.deadline}
+                                </span>
+                              )}
+                              {item.duration && (
+                                <span className="inline-flex items-center space-x-1 text-gray-400">
+                                  <Clock className="w-3 h-3" />
+                                  <span>{item.duration}</span>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Footer Action Link */}
+                          <div className="mt-5 pt-3.5 border-t border-gray-50 flex items-center justify-between">
+                            <span className="text-[10px] font-semibold text-gray-400">
+                              Saved {item.savedAt ? new Date(item.savedAt).toLocaleDateString() : 'recently'}
+                            </span>
+                            <button
+                              onClick={() => {
+                                if (item.link) {
+                                  if (item.link.startsWith('http')) {
+                                    window.open(item.link, '_blank');
+                                  } else {
+                                    if (onGoHome) onGoHome();
+                                    window.history.pushState(null, '', item.link);
+                                    window.dispatchEvent(new PopStateEvent('popstate'));
+                                  }
+                                }
+                              }}
+                              className="px-3 py-1.5 bg-brandGreen/10 hover:bg-brandGreen text-brandGreen hover:text-white rounded-xl text-xs font-bold transition-all inline-flex items-center space-x-1 cursor-pointer"
+                            >
+                              <span>View Item</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           )}
 

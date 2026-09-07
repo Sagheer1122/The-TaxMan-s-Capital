@@ -4,6 +4,7 @@ import PortalModal from '../../../components/PortalModal';
 import { downloadResourceFile, requestResource, fetchResources } from '../../../services/resourceService';
 import { subscribeNewsletter } from '../../../services/submissionService';
 import { requireAuth } from '../../../services/authService';
+import { toggleBookmark, isBookmarked, getBookmarks, onBookmarksChange } from '../../../services/bookmarkService';
 import {
   Search,
   BookOpen,
@@ -20,7 +21,8 @@ import {
   FileCheck,
   MessageSquare,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Bookmark
 } from 'lucide-react';
 
 const CATEGORY_HERO_CONTENT = {
@@ -147,6 +149,38 @@ export default function Resources({ selectedCategory: externalCategory, setSelec
   const [requestSubmitted, setRequestSubmitted] = useState(false);
   const [requestForm, setRequestForm] = useState({ name: '', resourceTitle: '', category: '', notes: '' });
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Unified Bookmark State for Resources
+  const [bookmarkedResourceIds, setBookmarkedResourceIds] = useState(() => {
+    return getBookmarks().filter(b => b.type === 'resource').map(b => String(b.itemId || b.id));
+  });
+
+  useEffect(() => {
+    const sub = onBookmarksChange((all) => {
+      setBookmarkedResourceIds(all.filter(b => b.type === 'resource').map(b => String(b.itemId || b.id)));
+    });
+    return () => sub.unsubscribe();
+  }, []);
+
+  const handleToggleResourceBookmark = (res) => {
+    if (!requireAuth('save or bookmark study resources to your library')) {
+      return;
+    }
+    const result = toggleBookmark({
+      id: res.id || res.title,
+      title: res.title,
+      subtitle: res.type || res.tag || 'Study Material',
+      category: res.tag || selectedCategory || 'CAF',
+      desc: res.desc || '',
+      fileUrl: res.downloadUrl || '',
+      link: '/resources'
+    }, 'resource');
+
+    const resIdStr = String(res.id || res.title);
+    setBookmarkedResourceIds(prev =>
+      result.isBookmarked ? [...prev, resIdStr] : prev.filter(id => id !== resIdStr)
+    );
+  };
 
   const categories = [
     { name: 'All', count: 112, icon: <BookOpen className="w-5 h-5" /> },
@@ -624,12 +658,26 @@ export default function Resources({ selectedCategory: externalCategory, setSelec
                             <span className="flex items-center"><Download className="w-3.5 h-3.5 mr-1" /> {res.downloads} Downloads</span>
                           </div>
                           
-                          <button
-                            onClick={() => handleDownload(res.title)}
-                            className={`px-4 py-2.5 text-white text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer shadow-md ${res.btnColor}`}
-                          >
-                            Download
-                          </button>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleToggleResourceBookmark(res)}
+                              title={bookmarkedResourceIds.includes(String(res.id || res.title)) ? 'Remove bookmark' : 'Bookmark resource'}
+                              className={`p-2.5 rounded-xl border transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                                bookmarkedResourceIds.includes(String(res.id || res.title))
+                                  ? 'bg-amber-500/10 border-amber-400/50 text-amber-500'
+                                  : 'border-gray-200 hover:border-brandGreen hover:bg-emerald-500/5 text-gray-400 hover:text-brandGreen'
+                              }`}
+                            >
+                              <Bookmark className={`w-4 h-4 ${bookmarkedResourceIds.includes(String(res.id || res.title)) ? 'fill-current' : ''}`} />
+                            </button>
+
+                            <button
+                              onClick={() => handleDownload(res.title)}
+                              className={`px-4 py-2.5 text-white text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer shadow-md ${res.btnColor}`}
+                            >
+                              Download
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -665,11 +713,23 @@ export default function Resources({ selectedCategory: externalCategory, setSelec
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-between sm:justify-end gap-6 shrink-0 border-t border-gray-50 pt-3 sm:pt-0 sm:border-0">
+                          <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 border-t border-gray-50 pt-3 sm:pt-0 sm:border-0">
                             <div className="flex flex-col sm:items-end text-left sm:text-right text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                               <span>{item.date}</span>
                               <span className="text-gray-400 font-medium mt-0.5">{item.downloads} Downloads</span>
                             </div>
+
+                            <button
+                              onClick={() => handleToggleResourceBookmark(item)}
+                              title={bookmarkedResourceIds.includes(String(item.id || item.title)) ? 'Remove bookmark' : 'Bookmark resource'}
+                              className={`p-2.5 rounded-xl border transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                                bookmarkedResourceIds.includes(String(item.id || item.title))
+                                  ? 'bg-amber-500/10 border-amber-400/50 text-amber-500'
+                                  : 'border-gray-200 hover:border-brandGreen hover:bg-emerald-500/5 text-gray-400 hover:text-brandGreen'
+                              }`}
+                            >
+                              <Bookmark className={`w-4 h-4 ${bookmarkedResourceIds.includes(String(item.id || item.title)) ? 'fill-current' : ''}`} />
+                            </button>
                             
                             <button
                               onClick={() => handleDownload(item.title)}

@@ -60,6 +60,7 @@ import {
   deleteNotification
 } from '../../../services/notificationService';
 import { getProfiles, logoutUser, registerUser, loginUser, requireAuth, getInitialSessionSync } from '../../../services/authService';
+import { toggleBookmark as toggleUnifiedBookmark, getBookmarks, onBookmarksChange } from '../../../services/bookmarkService';
 import { INITIAL_JOBS } from '../../../data/jobsData';
 const parseRouteToTabState = () => {
   if (typeof window === 'undefined') {
@@ -310,8 +311,19 @@ export default function Home({ session, sessionLoading }) {
     if (!requireAuth('save or bookmark jobs to your profile')) {
       return;
     }
+    const targetJob = INITIAL_JOBS.find(j => j.id === id) || { id, title: `Job Placement #${id}` };
+    const result = toggleUnifiedBookmark({
+      id: id,
+      title: targetJob.title,
+      subtitle: targetJob.company || "The TaxMan's Capital",
+      category: targetJob.jobType || targetJob.job_type || 'Job Placement',
+      location: targetJob.location || '',
+      deadline: targetJob.deadline || '',
+      link: '/jobs'
+    }, 'job', session?.user?.id);
+
     setSavedJobs(prev => {
-      const updated = prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id];
+      const updated = result.isBookmarked ? [...prev.filter(item => item !== id), id] : prev.filter(item => item !== id);
       if (session?.user?.id) {
         localStorage.setItem(`saved_jobs_${session.user.id}`, JSON.stringify(updated));
       }
