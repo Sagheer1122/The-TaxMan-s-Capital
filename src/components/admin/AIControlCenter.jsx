@@ -377,6 +377,10 @@ export default function AIControlCenter({ session }) {
     try {
       setIsExecutingCommand(true);
       setLastCommandResult(null);
+      const consoleEl = document.getElementById('ai-command-console');
+      if (consoleEl) {
+        consoleEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       const result = await executeOrchestratorCommand(text.trim());
       setLastCommandResult(result);
       setCommandInput('');
@@ -771,7 +775,7 @@ export default function AIControlCenter({ session }) {
       </div>
 
       {/* 3. Natural Language Command Console */}
-      <div className="rounded-3xl bg-[#0C121D]/90 border border-white/10 p-6 space-y-4 shadow-xl backdrop-blur-md">
+      <div id="ai-command-console" className="rounded-3xl bg-[#0C121D]/90 border border-white/10 p-6 space-y-4 shadow-xl backdrop-blur-md">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
             <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
@@ -1030,7 +1034,8 @@ export default function AIControlCenter({ session }) {
             {(stats?.agents || []).map((agent) => (
               <div
                 key={agent.id}
-                className="p-5 rounded-2xl bg-[#0C121D]/90 border border-white/10 hover:border-emerald-500/40 transition-all flex flex-col justify-between space-y-4 group backdrop-blur-md"
+                onClick={() => !isExecutingCommand && handleExecute(`Run ${agent.name} for latest updates.`)}
+                className="p-5 rounded-2xl bg-[#0C121D]/90 border border-white/10 hover:border-emerald-500/40 transition-all flex flex-col justify-between space-y-4 group backdrop-blur-md cursor-pointer hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-0.5"
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -1038,7 +1043,7 @@ export default function AIControlCenter({ session }) {
                       <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
                         {getAgentIcon(agent.id)}
                       </div>
-                      <span className="font-bold text-sm text-white">{agent.name}</span>
+                      <span className="font-bold text-sm text-white group-hover:text-emerald-400 transition-colors">{agent.name}</span>
                     </div>
                     <span className="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">
                       <span className="w-1.5 h-1.5 rounded-full bg-brandGreen animate-pulse" />
@@ -1051,11 +1056,15 @@ export default function AIControlCenter({ session }) {
                 <div className="pt-3 border-t border-white/5 flex items-center justify-between">
                   <span className="text-[10px] text-gray-500 font-mono">ID: {agent.id}</span>
                   <button
-                    onClick={() => handleExecute(`Run ${agent.name} for latest updates.`)}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleExecute(`Run ${agent.name} for latest updates.`);
+                    }}
                     disabled={isExecutingCommand}
-                    className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-brandGreen/20 hover:text-emerald-400 border border-white/10 text-xs font-semibold text-gray-300 transition-all cursor-pointer"
+                    className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-brandGreen hover:text-white border border-emerald-500/30 text-xs font-bold text-emerald-300 transition-all cursor-pointer"
                   >
-                    <span>Trigger</span>
+                    <span>Trigger Agent</span>
                     <ArrowRight className="w-3 h-3" />
                   </button>
                 </div>
