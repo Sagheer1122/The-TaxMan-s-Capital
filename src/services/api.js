@@ -5,13 +5,21 @@
 
 // Normalize API base URL
 let envUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
-if (!envUrl) {
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+
+if (typeof window !== 'undefined') {
+  const currentHost = window.location.hostname;
+  const isHosted = currentHost !== 'localhost' && currentHost !== '127.0.0.1';
+
+  // If running on Vercel/production and envUrl is empty or points to a mismatched static vercel frontend without API
+  if (isHosted && (!envUrl || (envUrl.includes('vercel.app') && !envUrl.includes(currentHost)))) {
     envUrl = '/api';
-  } else {
-    envUrl = 'http://localhost:5000/api';
   }
 }
+
+if (!envUrl) {
+  envUrl = 'http://localhost:5000/api';
+}
+
 let rawBaseUrl = envUrl;
 
 class ApiClient {
