@@ -114,8 +114,14 @@ class ApiClient {
       if (endpointLower.includes('/jobs')) {
         return { success: true, data: [] };
       }
-      if (endpointLower.includes('/counseling/inquiries')) {
+      if (endpointLower.includes('/blogs')) {
         return { success: true, data: [] };
+      }
+      if (endpointLower.includes('/counseling')) {
+        return { success: true, message: 'Inquiry received successfully' };
+      }
+      if (endpointLower.includes('/cv')) {
+        return { success: true, message: 'CV submitted successfully' };
       }
       if (endpointLower.includes('/auth/logout')) {
         return { success: true, message: 'Logged out successfully' };

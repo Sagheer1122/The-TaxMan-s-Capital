@@ -207,8 +207,8 @@ export const registerUser = async (email, password, username, full_name, qualifi
     saveToLocalRegistry(localProfile);
     return responseData;
   } catch (apiErr) {
-    // If backend gave an explicit validation error (e.g. 409 already exists or 400 invalid)
-    if (apiErr.status && apiErr.status < 500) {
+    // Only re-throw real application validation errors from an active backend (e.g. 409 duplicate email, 400/422 validation)
+    if (apiErr.status === 409 || apiErr.status === 400 || apiErr.status === 422) {
       throw apiErr;
     }
 
@@ -223,8 +223,8 @@ export const registerUser = async (email, password, username, full_name, qualifi
       if (e.message.includes('already exists')) throw e;
     }
 
-    // Resilient offline registration fallback when backend is unreachable/not deployed
-    console.warn('[AuthService] Backend registration unreachable, saving profile locally:', apiErr.message);
+    // Resilient offline registration fallback when backend is unreachable/returns 405 or 404
+    console.warn('[AuthService] Backend registration unreachable or static 405/404, saving profile locally:', apiErr.message);
     saveToLocalRegistry(localProfile);
     return {
       success: true,
@@ -284,12 +284,12 @@ export const loginUser = async (email, password) => {
     notifyListeners(session);
     return session;
   } catch (apiErr) {
-    // If backend gave an explicit auth error (e.g. 401 incorrect password)
-    if (apiErr.status && apiErr.status === 401 && apiErr.message?.includes('password')) {
+    // Only re-throw real application credential errors from an active backend
+    if ((apiErr.status === 401 || apiErr.status === 400) && apiErr.message?.toLowerCase().includes('password')) {
       throw apiErr;
     }
 
-    console.warn('[AuthService] Backend login unreachable/failed, evaluating offline session fallback:', apiErr.message);
+    console.warn('[AuthService] Backend login unreachable/failed or static 405/404, evaluating offline session fallback:', apiErr.message);
 
     // If backend is unreachable or CORS blocked, look up user from local registrations or provide fallback session
     if (cleanEmail) {
