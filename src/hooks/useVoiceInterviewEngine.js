@@ -397,7 +397,12 @@ export function useVoiceInterviewEngine({
       };
 
       utterance.onerror = (e) => {
-        console.warn('[VoiceEngine] TTS error:', e);
+        // 'interrupted' or 'canceled' occurs naturally when previous utterance is cleared
+        if (e.error === 'interrupted' || e.error === 'canceled') {
+          setIsAiSpeaking(false);
+          return;
+        }
+        console.warn('[VoiceEngine] TTS event:', e.error || 'unhandled event');
         setIsAiSpeaking(false);
         onEnd();
       };

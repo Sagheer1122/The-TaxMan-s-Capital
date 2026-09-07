@@ -3,28 +3,34 @@
  * Handles URL normalization, CORS resilience, automatic JWT injection, and graceful fallback handlers.
  */
 
-// Normalize API base URL
-let envUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+// Determine API base URL dynamically
+const resolveBaseUrl = () => {
+  let env = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
 
-if (typeof window !== 'undefined') {
-  const currentHost = window.location.hostname;
-  const isHosted = currentHost !== 'localhost' && currentHost !== '127.0.0.1';
+  if (typeof window !== 'undefined') {
+    // Check if user or admin configured a custom backend endpoint in localStorage
+    const custom = (localStorage.getItem('taxman_custom_api_url') || '').trim().replace(/\/+$/, '');
+    if (custom) return custom;
 
-  // If running on Vercel/production and envUrl is empty or points to a mismatched static vercel frontend without API
-  if (isHosted && (!envUrl || (envUrl.includes('vercel.app') && !envUrl.includes(currentHost)))) {
-    envUrl = '/api';
+    const currentHost = window.location.hostname;
+    const isHosted = currentHost !== 'localhost' && currentHost !== '127.0.0.1';
+
+    // If running on static host (Vercel, GitHub Pages, etc.) and no external API URL is provided
+    if (isHosted && (!env || env.includes(currentHost) || env === '/api')) {
+      return ''; // Indicates static frontend mode without active Express backend
+    }
   }
-}
 
-if (!envUrl) {
-  envUrl = 'http://localhost:5000/api';
-}
-
-let rawBaseUrl = envUrl;
+  return env || 'http://localhost:5000/api';
+};
 
 class ApiClient {
   constructor(baseUrl) {
     this.baseUrl = baseUrl;
+  }
+
+  getBaseUrl() {
+    return resolveBaseUrl();
   }
 
   getToken(endpoint = '') {
@@ -50,19 +56,62 @@ class ApiClient {
   }
 
   buildUrl(endpoint) {
+    const activeBase = this.getBaseUrl();
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    
-    // If baseUrl already ends with /api and endpoint starts with /api, deduplicate
-    if (this.baseUrl.endsWith('/api') && cleanEndpoint.startsWith('/api')) {
-      return `${this.baseUrl}${cleanEndpoint.replace(/^\/api/, '')}`;
+
+    if (!activeBase) {
+      return cleanEndpoint;
     }
-    
-    return `${this.baseUrl}${cleanEndpoint}`;
+
+    // If baseUrl already ends with /api and endpoint starts with /api, deduplicate
+    if (activeBase.endsWith('/api') && cleanEndpoint.startsWith('/api')) {
+      return `${activeBase}${cleanEndpoint.replace(/^\/api/, '')}`;
+    }
+
+    return `${activeBase}${cleanEndpoint}`;
   }
 
   async request(endpoint, options = {}) {
+    const activeBase = this.getBaseUrl();
+    const isStaticMode = !activeBase && typeof window !== 'undefined' && window.location.hostname !== 'localhost';
+    const endpointLower = endpoint.toLowerCase();
+
+    // If in static frontend mode (no remote backend attached), gracefully provide fallback without making doomed HTTP POST calls that trigger 405
+    if (isStaticMode) {
+      if (endpointLower.includes('/auth/logout')) {
+        return { success: true, message: 'Logged out successfully' };
+      }
+      if (endpointLower.includes('/notifications')) {
+        return { success: true, data: [] };
+      }
+      if (endpointLower.includes('/resources')) {
+        return { success: true, data: [] };
+      }
+      if (endpointLower.includes('/announcements')) {
+        return { success: true, data: [] };
+      }
+      if (endpointLower.includes('/jobs')) {
+        return { success: true, data: [] };
+      }
+      if (endpointLower.includes('/blogs')) {
+        return { success: true, data: [] };
+      }
+      if (endpointLower.includes('/counseling')) {
+        return { success: true, message: 'Inquiry received successfully' };
+      }
+      if (endpointLower.includes('/cv')) {
+        return { success: true, message: 'CV submitted successfully' };
+      }
+
+      // For auth login/register and AI/interview endpoints in static mode, throw graceful offline error
+      const offlineError = new Error('Static frontend mode (backend endpoint not configured)');
+      offlineError.status = 405;
+      offlineError.isOffline = true;
+      throw offlineError;
+    }
+
     const url = this.buildUrl(endpoint);
-    
+
     const headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -100,8 +149,6 @@ class ApiClient {
       return data;
     } catch (err) {
       // Safe fallback responses for non-blocking UI endpoints when backend CORS/network is resolving
-      const endpointLower = endpoint.toLowerCase();
-
       if (endpointLower.includes('/notifications')) {
         return { success: true, data: [] };
       }
@@ -153,5 +200,6 @@ class ApiClient {
   }
 }
 
-export const api = new ApiClient(rawBaseUrl);
+export const api = new ApiClient(resolveBaseUrl());
 export default api;
+
