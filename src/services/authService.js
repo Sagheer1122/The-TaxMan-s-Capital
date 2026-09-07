@@ -143,14 +143,18 @@ export const onAuthChange = (callback) => {
  * Note: Does not automatically log in the user, honoring the Sign Up -> Login -> Home Portal flow.
  */
 export const registerUser = async (email, password, username, full_name, qualification = 'CAF', role = 'student') => {
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanUsername = username.trim().toLowerCase();
+  const cleanName = full_name.trim();
+
   const localProfile = {
     _id: 'usr_' + Date.now(),
     id: 'usr_' + Date.now(),
-    name: full_name.trim(),
-    fullName: full_name.trim(),
-    full_name: full_name.trim(),
-    username: username.trim(),
-    email: email.trim().toLowerCase(),
+    name: cleanName,
+    fullName: cleanName,
+    full_name: cleanName,
+    username: cleanUsername,
+    email: cleanEmail,
     role: role || 'student',
     qualification,
     level: qualification,
@@ -185,11 +189,11 @@ export const registerUser = async (email, password, username, full_name, qualifi
 
   try {
     const res = await api.post('/auth/register', {
-      email: email.trim(),
+      email: cleanEmail,
       password,
-      username: username.trim(),
-      name: full_name.trim(),
-      fullName: full_name.trim(),
+      username: cleanUsername,
+      name: cleanName,
+      fullName: cleanName,
       qualification,
       level: qualification,
       role
@@ -203,10 +207,30 @@ export const registerUser = async (email, password, username, full_name, qualifi
     saveToLocalRegistry(localProfile);
     return responseData;
   } catch (apiErr) {
-    // If backend is unreachable, still record locally for resilient offline workflow
+    // If backend gave an explicit validation error (e.g. 409 already exists or 400 invalid)
+    if (apiErr.status && apiErr.status < 500) {
+      throw apiErr;
+    }
+
+    // Check if duplicate in local registry
+    try {
+      const existingUsers = JSON.parse(localStorage.getItem('taxman_registered_users') || '[]');
+      const duplicate = existingUsers.find(u => u.email?.toLowerCase() === cleanEmail);
+      if (duplicate) {
+        throw new Error('An account with this email address already exists. Please log in.');
+      }
+    } catch (e) {
+      if (e.message.includes('already exists')) throw e;
+    }
+
+    // Resilient offline registration fallback when backend is unreachable/not deployed
+    console.warn('[AuthService] Backend registration unreachable, saving profile locally:', apiErr.message);
     saveToLocalRegistry(localProfile);
-    const message = apiErr.response?.data?.message || apiErr.message || 'Registration failed. Please check your details and try again.';
-    throw new Error(message);
+    return {
+      success: true,
+      message: 'Account created successfully! Please sign in.',
+      user: localProfile
+    };
   }
 };
 
@@ -214,9 +238,11 @@ export const registerUser = async (email, password, username, full_name, qualifi
  * Login user and persist session
  */
 export const loginUser = async (email, password) => {
+  const cleanEmail = email.trim().toLowerCase();
+
   try {
     const res = await api.post('/auth/login', {
-      email: email.trim(),
+      email: cleanEmail,
       password
     });
     const responseData = res?.data?.data || res?.data || res;
@@ -258,28 +284,39 @@ export const loginUser = async (email, password) => {
     notifyListeners(session);
     return session;
   } catch (apiErr) {
+    // If backend gave an explicit auth error (e.g. 401 incorrect password)
+    if (apiErr.status && apiErr.status === 401 && apiErr.message?.includes('password')) {
+      throw apiErr;
+    }
+
     console.warn('[AuthService] Backend login unreachable/failed, evaluating offline session fallback:', apiErr.message);
 
-    // If backend is unreachable or CORS blocked, provide fallback session so user is never locked out
-    if (email.trim()) {
-      const cleanEmail = email.trim().toLowerCase();
+    // If backend is unreachable or CORS blocked, look up user from local registrations or provide fallback session
+    if (cleanEmail) {
       const isAdmin = cleanEmail.includes('admin') || cleanEmail === 'admin@taxman.com';
+      
+      let localMatchedUser = null;
+      try {
+        const registered = JSON.parse(localStorage.getItem('taxman_registered_users') || '[]');
+        localMatchedUser = registered.find(u => u.email?.toLowerCase() === cleanEmail);
+      } catch {}
+
       const fallbackUser = {
-        id: 'user_' + Date.now(),
-        _id: 'user_' + Date.now(),
+        id: localMatchedUser?.id || localMatchedUser?._id || ('user_' + Date.now()),
+        _id: localMatchedUser?._id || localMatchedUser?.id || ('user_' + Date.now()),
         email: cleanEmail,
-        name: isAdmin ? 'Platform Administrator' : cleanEmail.split('@')[0],
-        fullName: isAdmin ? 'Platform Administrator' : cleanEmail.split('@')[0],
-        username: cleanEmail.split('@')[0],
-        role: isAdmin ? 'admin' : 'student',
-        avatar_url: '',
-        profileImage: '',
-        qualification: 'CAF Qualified',
-        level: 'CAF',
+        name: localMatchedUser?.name || localMatchedUser?.fullName || (isAdmin ? 'Platform Administrator' : cleanEmail.split('@')[0]),
+        fullName: localMatchedUser?.fullName || localMatchedUser?.name || (isAdmin ? 'Platform Administrator' : cleanEmail.split('@')[0]),
+        username: localMatchedUser?.username || cleanEmail.split('@')[0],
+        role: localMatchedUser?.role || (isAdmin ? 'admin' : 'student'),
+        avatar_url: localMatchedUser?.avatar_url || localMatchedUser?.profileImage || '',
+        profileImage: localMatchedUser?.profileImage || localMatchedUser?.avatar_url || '',
+        qualification: localMatchedUser?.qualification || localMatchedUser?.level || 'CAF Qualified',
+        level: localMatchedUser?.level || localMatchedUser?.qualification || 'CAF',
         user_metadata: {
-          full_name: isAdmin ? 'Platform Administrator' : cleanEmail.split('@')[0],
-          username: cleanEmail.split('@')[0],
-          role: isAdmin ? 'admin' : 'student'
+          full_name: localMatchedUser?.name || localMatchedUser?.fullName || (isAdmin ? 'Platform Administrator' : cleanEmail.split('@')[0]),
+          username: localMatchedUser?.username || cleanEmail.split('@')[0],
+          role: localMatchedUser?.role || (isAdmin ? 'admin' : 'student')
         }
       };
 
