@@ -41,7 +41,6 @@ import {
   Brain,
   CheckCheck
 } from 'lucide-react';
-import AIControlCenter from '../../../components/admin/AIControlCenter';
 import logoImg from '../../../assets/logo.png';
 import AdminPagination from '../../../components/common/AdminPagination';
 import {
@@ -1390,7 +1389,6 @@ export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raz
         <nav className="flex-1 min-h-0 px-4 pt-4 pb-2 overflow-y-auto space-y-1 scrollbar-thin scrollbar-thumb-white/10">
           {[
             { id: 'Dashboard', label: 'Dashboard', icon: <Globe className="w-4.5 h-4.5" /> },
-            { id: 'AI Control Center', label: 'AI Agent Hub', icon: <Sparkles className="w-4.5 h-4.5 text-emerald-400" /> },
             { id: 'Pakistan Jobs', label: 'Pakistan Jobs', icon: <Briefcase className="w-4.5 h-4.5" /> },
             { id: 'Inductions', label: 'Inductions', icon: <Clock className="w-4.5 h-4.5" /> },
             { id: 'Overseas Jobs', label: 'Overseas Jobs', icon: <Globe className="w-4.5 h-4.5" /> },
@@ -1713,11 +1711,6 @@ export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raz
             <div className="flex items-center justify-center py-10">
               <div className="w-8 h-8 border-4 border-brandGreen border-t-transparent rounded-full animate-spin"></div>
             </div>
-          )}
-
-          {/* VIEW: AI CONTROL CENTER */}
-          {activeSubTab === 'AI Control Center' && (
-            <AIControlCenter session={session} />
           )}
 
           {/* VIEW: OVERVIEW / DASHBOARD */}
