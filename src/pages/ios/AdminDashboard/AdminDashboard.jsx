@@ -341,11 +341,12 @@ export default function AdminDashboard({
 
   // Mock Fallbacks for testing & development
   const mockProfiles = [
-    { id: '1', full_name: 'Saboor Ahmad CA', username: 'admin', email: 'admin@taxmancapital.com', role: 'team_head', level: 'Qualified', created_at: '2026-05-01' },
-    { id: '2', full_name: 'Sagheer Ahmad', username: 'sagheer_caf', email: 'sagheerahmad5767@gmail.com', role: 'student', level: 'CAF', created_at: '2026-09-04' },
-    { id: '3', full_name: 'Muhammad Ahmed', username: 'ahmed_caf', email: 'student@taxmancapital.com', role: 'student', level: 'CAF', created_at: '2026-06-12' },
-    { id: '4', full_name: 'Usman Saleem', username: 'usman_audit', email: 'mentor@taxmancapital.com', role: 'mentor', level: 'Qualified', created_at: '2026-06-18' },
-    { id: '5', full_name: 'Fatima Noor', username: 'fatima_cfap', email: 'fatima.noor@gmail.com', role: 'student', level: 'CFAP', created_at: '2026-07-02' }
+    { id: 'admin_1', full_name: 'Super Admin', username: 'admin', email: 'admin@gmail.com', role: 'admin', level: 'Qualified', created_at: '2026-05-01', isActive: true },
+    { id: 'mod_1', full_name: 'System Moderator', username: 'moderator', email: 'moderator@taxmancapital.com', role: 'moderator', level: 'Staff', created_at: '2026-05-01', isActive: true },
+    { id: 'usr_2', full_name: 'Sagheer Ahmad', username: 'sagheer_caf', email: 'sagheerahmad5767@gmail.com', role: 'student', level: 'CAF', created_at: '2026-09-04', isActive: true },
+    { id: 'usr_3', full_name: 'Muhammad Ahmed', username: 'ahmed_caf', email: 'student@taxmancapital.com', role: 'student', level: 'CAF', created_at: '2026-06-12', isActive: true },
+    { id: 'usr_4', full_name: 'Usman Saleem', username: 'usman_audit', email: 'mentor@taxmancapital.com', role: 'mentor', level: 'Qualified', created_at: '2026-06-18', isActive: true },
+    { id: 'usr_5', full_name: 'Fatima Noor', username: 'fatima_cfap', email: 'fatima.noor@gmail.com', role: 'student', level: 'CFAP', created_at: '2026-07-02', isActive: true }
   ];
 
   const mockJobs = [
@@ -553,76 +554,125 @@ export default function AdminDashboard({
           const s = JSON.parse(localStorage.getItem('taxman_session') || '{}');
           if (s.user?.email) return s.user.email;
         } catch {}
-        return 'admin@taxmancapital.com';
+        return 'admin@gmail.com';
       })();
-      const activeAdminName = session?.user?.name || currentAdminName || 'Saboor Ahmad CA';
-      const activeAdminRole = session?.user?.role || (effectiveIsModerator ? 'moderator' : 'team_head');
+      const activeAdminName = session?.user?.name || currentAdminName || 'Super Admin';
+      const activeAdminRole = session?.user?.role || (effectiveIsModerator ? 'moderator' : 'admin');
 
       if (effectiveIsModerator) {
         setProfiles([]);
-      } else if (fetchedUsers && fetchedUsers.length > 0) {
-        let mappedUsers = fetchedUsers.map(u => ({
-          id: u._id || u.id,
-          full_name: u.name || u.fullName || u.full_name,
-          username: u.username || u.email?.split('@')[0],
-          email: u.email,
-          avatar_url: u.avatar_url || u.profileImage || u.avatar || u.picture || resolveUserAvatar(u) || '',
-          role: u.role || 'student',
-          level: u.level || u.qualification || 'CAF',
-          isActive: u.isActive !== false,
-          created_at: u.createdAt || u.created_at || new Date().toISOString()
-        }));
-
-        if (activeAdminEmail && !mappedUsers.some(u => u.email?.toLowerCase() === activeAdminEmail.toLowerCase())) {
-          mappedUsers.unshift({
-            id: session?.user?.id || 'admin_head',
-            full_name: activeAdminName,
-            username: activeAdminEmail.split('@')[0],
-            email: activeAdminEmail,
-            avatar_url: session?.user?.avatar_url || session?.user?.profileImage || adminProfile?.avatar_url || '',
-            role: activeAdminRole,
-            level: 'Qualified',
-            isActive: true,
-            created_at: new Date().toISOString()
-          });
+      } else {
+        let rawUsers = [];
+        if (fetchedUsers && fetchedUsers.length > 0) {
+          rawUsers = fetchedUsers.map(u => ({
+            id: u._id || u.id,
+            full_name: u.name || u.fullName || u.full_name,
+            username: u.username || u.email?.split('@')[0],
+            email: u.email,
+            avatar_url: u.avatar_url || u.profileImage || u.avatar || u.picture || resolveUserAvatar(u) || '',
+            role: u.role || 'student',
+            level: u.level || u.qualification || 'CAF',
+            isActive: u.isActive !== false,
+            created_at: u.createdAt || u.created_at || new Date().toISOString()
+          }));
+        } else {
+          const local = loadLocalStorageTable('profiles', mockProfiles);
+          rawUsers = (local && local.length > 1) ? local : mockProfiles;
         }
 
-        setProfiles(mappedUsers);
-        saveLocalStorageTable('profiles', mappedUsers);
-      } else {
-        const local = loadLocalStorageTable('profiles', mockProfiles);
-        let resolved = (local && local.length > 1) ? local : mockProfiles;
+        // 1. Filter out legacy mock admins (admin@taxmancapital.com) and keep only single valid admin
+        let resolved = rawUsers.filter(u => {
+          const email = (u.email || '').toLowerCase().trim();
+          if (email === 'admin@taxmancapital.com') return false;
+          if (u.role === 'admin' || u.role === 'team_head') {
+            return email === 'admin@gmail.com' || email === activeAdminEmail.toLowerCase().trim();
+          }
+          return true;
+        });
+
+        // 2. Ensure exactly ONE Admin (admin@gmail.com) exists
+        const adminIndex = resolved.findIndex(u => (u.email || '').toLowerCase() === 'admin@gmail.com' || (u.email || '').toLowerCase() === activeAdminEmail.toLowerCase());
+        const singleAdmin = {
+          id: session?.user?.id || 'admin_1',
+          full_name: activeAdminName,
+          username: 'admin',
+          email: 'admin@gmail.com',
+          avatar_url: session?.user?.avatar_url || session?.user?.profileImage || adminProfile?.avatar_url || '',
+          role: 'admin',
+          level: 'Qualified',
+          isActive: true,
+          created_at: '2026-05-01'
+        };
+
+        if (adminIndex >= 0) {
+          resolved[adminIndex] = { ...resolved[adminIndex], ...singleAdmin };
+        } else {
+          resolved.unshift(singleAdmin);
+        }
+
+        // 3. Ensure exactly ONE System Moderator exists in the User Manager list
+        const modIndex = resolved.findIndex(u => u.role === 'moderator' || (u.email || '').toLowerCase() === 'moderator@taxmancapital.com');
+        const singleModerator = {
+          id: 'mod_1',
+          full_name: 'Content Moderator',
+          username: 'moderator',
+          email: 'moderator@taxmancapital.com',
+          avatar_url: '',
+          role: 'moderator',
+          level: 'Staff',
+          isActive: true,
+          created_at: '2026-05-01'
+        };
+
+        if (modIndex >= 0) {
+          resolved[modIndex] = { ...singleModerator, ...resolved[modIndex], role: 'moderator' };
+        } else {
+          resolved.splice(1, 0, singleModerator);
+        }
+
         resolved = resolved.map(p => ({
           ...p,
           avatar_url: p.avatar_url || p.profileImage || resolveUserAvatar(p) || ''
         }));
-        if (activeAdminEmail && !resolved.some(u => u.email?.toLowerCase() === activeAdminEmail.toLowerCase())) {
-          resolved = [{
-            id: session?.user?.id || 'admin_head',
-            full_name: activeAdminName,
-            username: activeAdminEmail.split('@')[0],
-            email: activeAdminEmail,
-            avatar_url: session?.user?.avatar_url || session?.user?.profileImage || adminProfile?.avatar_url || '',
-            role: activeAdminRole,
-            level: 'Qualified',
-            isActive: true,
-            created_at: new Date().toISOString()
-          }, ...resolved];
-        }
+
         setProfiles(resolved);
+        saveLocalStorageTable('profiles', resolved);
+        try {
+          localStorage.setItem('admin_table_profiles', JSON.stringify(resolved));
+        } catch {}
       }
 
-      const localMessages = loadLocalStorageTable('contact_messages', []);
+      // Purge dummy mock contact inquiries (e.g., Ayesha, Bilal Tariq, etc.)
+      const purgeDummyMessages = (msgs) => {
+        if (!Array.isArray(msgs)) return [];
+        return msgs.filter(m => {
+          const name = (m.name || '').toLowerCase();
+          const email = (m.email || '').toLowerCase();
+          if (name.includes('ayesha') || name.includes('bilal tariq') || name.includes('ali raza') || name.includes('sara khan')) return false;
+          if (email.includes('ayesha') || email.includes('student@example.com')) return false;
+          return true;
+        });
+      };
+
+      const rawLocalMessages = loadLocalStorageTable('contact_messages', []);
+      const localMessages = purgeDummyMessages(rawLocalMessages);
+      saveLocalStorageTable('contact_messages', localMessages);
+      try {
+        const rawThetaxman = JSON.parse(localStorage.getItem('thetaxman_db_contact_messages') || '[]');
+        const cleanThetaxman = purgeDummyMessages(rawThetaxman);
+        localStorage.setItem('thetaxman_db_contact_messages', JSON.stringify(cleanThetaxman));
+      } catch {}
+
       let allInquiries = [];
       if (fetchedInquiries && fetchedInquiries.length > 0) {
-        allInquiries = [...fetchedInquiries];
+        allInquiries = purgeDummyMessages([...fetchedInquiries]);
         localMessages.forEach(lm => {
           if (!allInquiries.some(fi => (fi._id || fi.id) === (lm._id || lm.id) || (fi.email === lm.email && (fi.subject === lm.subject || fi.service === lm.service)))) {
             allInquiries.push(lm);
           }
         });
       } else {
-        allInquiries = localMessages.length > 0 ? localMessages : mockMessages;
+        allInquiries = localMessages;
       }
 
       setMessages(allInquiries.map(inq => ({
@@ -4260,7 +4310,7 @@ export default function AdminDashboard({
                             <tbody className="divide-y divide-gray-100 text-xs font-semibold text-gray-600">
                               {paginatedUsers.map(p => {
                                 const isBlocked = p.isActive === false;
-                                const activeAdminEmail = session?.user?.email || 'admin@taxmancapital.com';
+                                const activeAdminEmail = session?.user?.email || 'admin@gmail.com';
                                 const isSelf = (p.email && p.email.toLowerCase() === activeAdminEmail.toLowerCase()) || p.role === 'team_head';
                                 return (
                                   <tr key={p.id} className={`hover:bg-[#F8F9FB]/50 transition-colors ${isBlocked ? 'bg-red-50/20' : ''}`}>
@@ -4303,10 +4353,11 @@ export default function AdminDashboard({
                                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
                                             p.role === 'team_head' ? 'bg-amber-500/15 text-amber-600 border border-amber-200' :
                                             p.role === 'admin' ? 'bg-brandGreen/10 text-brandGreen-dark' :
+                                            p.role === 'moderator' ? 'bg-indigo-500/10 text-indigo-600 border border-indigo-200' :
                                             p.role === 'mentor' ? 'bg-purple-500/10 text-purple-600' :
                                             'bg-blue-500/10 text-blue-600'
                                           }`}>
-                                          {p.role === 'team_head' ? 'Team Head' : p.role === 'student' ? 'Student' : p.role}
+                                          {p.role === 'team_head' ? 'Team Head' : p.role === 'moderator' ? 'Moderator' : p.role === 'student' ? 'Student' : p.role}
                                         </span>
                                         {p.level && (
                                           <span className="text-[10px] text-gray-400 font-semibold pl-1">
@@ -4392,7 +4443,7 @@ export default function AdminDashboard({
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {paginatedUsers.map(p => {
                           const isBlocked = p.isActive === false;
-                          const activeAdminEmail = session?.user?.email || 'admin@taxmancapital.com';
+                          const activeAdminEmail = session?.user?.email || 'admin@gmail.com';
                           const isSelf = (p.email && p.email.toLowerCase() === activeAdminEmail.toLowerCase()) || p.role === 'team_head';
                           return (
                             <div
@@ -4462,12 +4513,14 @@ export default function AdminDashboard({
                                         ? 'bg-amber-500/15 text-amber-600 border border-amber-200'
                                         : p.role === 'admin'
                                         ? 'bg-brandGreen/10 text-brandGreen-dark'
+                                        : p.role === 'moderator'
+                                        ? 'bg-indigo-500/10 text-indigo-600 border border-indigo-200'
                                         : p.role === 'mentor'
                                         ? 'bg-purple-500/10 text-purple-600'
                                         : 'bg-blue-500/10 text-blue-600'
                                     }`}
                                   >
-                                    {p.role === 'team_head' ? 'Team Head' : p.role === 'student' ? 'Student' : p.role}
+                                    {p.role === 'team_head' ? 'Team Head' : p.role === 'moderator' ? 'Moderator' : p.role === 'student' ? 'Student' : p.role}
                                   </span>
                                   {p.level && (
                                     <span className="text-gray-400 font-bold text-[10px]">Level: {p.level}</span>

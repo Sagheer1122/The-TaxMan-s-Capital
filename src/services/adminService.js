@@ -31,12 +31,22 @@ export const getAllUsers = async () => {
   const seedUsers = [
     {
       _id: 'admin_1',
-      name: 'Saboor Ahmad CA',
-      username: 'saboor_lead',
-      email: 'admin@taxmancapital.com',
+      name: 'Super Admin',
+      username: 'admin',
+      email: 'admin@gmail.com',
       role: 'admin',
       qualification: 'Qualified CA',
       level: 'Qualified',
+      createdAt: '2026-05-01'
+    },
+    {
+      _id: 'mod_1',
+      name: 'System Moderator',
+      username: 'moderator',
+      email: 'moderator@taxmancapital.com',
+      role: 'moderator',
+      qualification: 'Staff Moderator',
+      level: 'Staff',
       createdAt: '2026-05-01'
     },
     {
@@ -222,7 +232,31 @@ export const getAllUsers = async () => {
     }
   } catch {}
 
-  const finalUsers = Array.from(userMap.values());
+  // Clean out legacy duplicate admin
+  userMap.delete('admin@taxmancapital.com');
+
+  // Guarantee single system moderator exists
+  if (!userMap.has('moderator@taxmancapital.com')) {
+    userMap.set('moderator@taxmancapital.com', {
+      _id: 'mod_1',
+      name: 'System Moderator',
+      username: 'moderator',
+      email: 'moderator@taxmancapital.com',
+      avatar_url: '',
+      role: 'moderator',
+      qualification: 'Staff Moderator',
+      level: 'Staff',
+      isActive: true,
+      createdAt: '2026-05-01'
+    });
+  }
+
+  // Ensure single admin (admin@gmail.com)
+  const finalUsers = Array.from(userMap.values()).filter(u => {
+    const email = (u.email || '').toLowerCase().trim();
+    if (email === 'admin@taxmancapital.com') return false;
+    return true;
+  });
 
   // Cache to localStorage for offline access
   try {

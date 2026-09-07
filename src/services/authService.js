@@ -639,13 +639,23 @@ export const getProfiles = async () => {
 
   return [
     {
-      id: '1',
-      email: 'admin@taxmancapital.com',
-      name: 'Saboor Ahmad CA',
+      id: 'admin_1',
+      email: 'admin@gmail.com',
+      name: 'Super Admin',
       username: 'admin',
       role: 'admin',
       level: 'Qualified',
       qualification: 'Qualified',
+      created_at: '2026-06-01'
+    },
+    {
+      id: 'mod_1',
+      email: 'moderator@taxmancapital.com',
+      name: 'System Moderator',
+      username: 'moderator',
+      role: 'moderator',
+      level: 'Staff',
+      qualification: 'Staff Moderator',
       created_at: '2026-06-01'
     },
     {
