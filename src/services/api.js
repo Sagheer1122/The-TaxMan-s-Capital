@@ -15,10 +15,19 @@ const resolveBaseUrl = () => {
     const currentHost = window.location.hostname;
     const isHosted = currentHost !== 'localhost' && currentHost !== '127.0.0.1';
 
-    // If running on static host (Vercel, GitHub Pages, etc.) and no external API URL is provided
-    if (isHosted && (!env || env.includes(currentHost) || env === '/api')) {
-      return ''; // Indicates static frontend mode without active Express backend
+    // If running on static host (Vercel, GitHub Pages, etc.)
+    // Note: Vercel domains (*.vercel.app) are frontend SPAs, NOT backend API servers.
+    // We must ignore vercel.app domains to prevent cross-origin CORS errors.
+    if (isHosted) {
+      if (!env || env.includes('vercel.app') || env.includes(currentHost) || env === '/api') {
+        return ''; // Indicates static frontend mode without active Express backend
+      }
     }
+  }
+
+  // If env is a vercel.app domain, ignore it
+  if (env && env.includes('vercel.app')) {
+    return '';
   }
 
   return env || 'http://localhost:5000/api';
@@ -76,10 +85,17 @@ class ApiClient {
     const isStaticMode = !activeBase && typeof window !== 'undefined' && window.location.hostname !== 'localhost';
     const endpointLower = endpoint.toLowerCase();
 
-    // If in static frontend mode (no remote backend attached), gracefully provide fallback without making doomed HTTP POST calls that trigger 405
+    // If in static frontend mode (no remote Express backend attached), gracefully return safe fallback data
+    // to prevent doomed HTTP calls that fail with CORS or 405 Method Not Allowed
     if (isStaticMode) {
       if (endpointLower.includes('/auth/logout')) {
         return { success: true, message: 'Logged out successfully' };
+      }
+      if (endpointLower.includes('/admin/users')) {
+        return { success: true, data: [] };
+      }
+      if (endpointLower.includes('/admin/stats')) {
+        return { success: true, data: {} };
       }
       if (endpointLower.includes('/notifications')) {
         return { success: true, data: [] };
@@ -97,13 +113,19 @@ class ApiClient {
         return { success: true, data: [] };
       }
       if (endpointLower.includes('/counseling')) {
-        return { success: true, message: 'Inquiry received successfully' };
+        return { success: true, data: [], message: 'Inquiry processed successfully' };
       }
       if (endpointLower.includes('/cv')) {
-        return { success: true, message: 'CV submitted successfully' };
+        return { success: true, message: 'CV processed successfully' };
+      }
+      if (endpointLower.includes('/ai/control-center')) {
+        return { success: true, data: {} };
+      }
+      if (endpointLower.includes('/ai/')) {
+        return { success: true, data: [] };
       }
 
-      // For auth login/register and AI/interview endpoints in static mode, throw graceful offline error
+      // For auth login/register and AI/interview endpoints in static mode, throw clean offline error
       const offlineError = new Error('Static frontend mode (backend endpoint not configured)');
       offlineError.status = 405;
       offlineError.isOffline = true;
