@@ -13,6 +13,7 @@ import {
   SEED_ADMIN,
   SEED_STUDENT,
   SEED_MENTOR,
+  SEED_MODERATOR,
   SEED_JOBS,
   SEED_RESOURCES,
   SEED_COMMUNITY_GROUPS
@@ -33,14 +34,16 @@ const seedDatabase = async () => {
       MentorProfile.deleteMany()
     ]);
 
-    console.log('👤 Seeding default users (Admin, Student, Mentor)...');
-    const [admin, student, mentor] = await Promise.all([
+    console.log('👤 Seeding default users (Admin, Moderator, Student, Mentor)...');
+    const [admin, moderator, student, mentor] = await Promise.all([
       User.create(SEED_ADMIN),
+      User.create(SEED_MODERATOR),
       User.create(SEED_STUDENT),
       User.create(SEED_MENTOR)
     ]);
 
     console.log(`✅ Admin Account created: ${admin.email} (Password: AdminPassword123!)`);
+    console.log(`✅ Moderator Account created: ${moderator.email} (Password: ModeratorPassword123!)`);
     console.log(`✅ Student Account created: ${student.email} (Password: StudentPassword123!)`);
     console.log(`✅ Mentor Account created: ${mentor.email} (Password: MentorPassword123!)`);
 

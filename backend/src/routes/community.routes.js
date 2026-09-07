@@ -15,7 +15,7 @@ const router = express.Router();
 
 // WhatsApp/Discord Community Groups
 router.get('/groups', getCommunityGroups);
-router.post('/groups', authenticateUser, authorizeRoles('admin'), createCommunityGroup);
+router.post('/groups', authenticateUser, authorizeRoles('admin', 'moderator'), createCommunityGroup);
 
 // Community Posts & Discussions
 router.get('/posts', optionalAuth, getPosts);

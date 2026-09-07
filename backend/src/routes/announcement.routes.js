@@ -12,8 +12,8 @@ const router = express.Router();
 
 router.get('/', optionalAuth, getAnnouncements);
 router.get('/:id', optionalAuth, getAnnouncementById);
-router.post('/', authenticateUser, authorizeRoles('admin'), createAnnouncement);
-router.put('/:id', authenticateUser, authorizeRoles('admin'), updateAnnouncement);
-router.delete('/:id', authenticateUser, authorizeRoles('admin'), deleteAnnouncement);
+router.post('/', authenticateUser, authorizeRoles('admin', 'moderator'), createAnnouncement);
+router.put('/:id', authenticateUser, authorizeRoles('admin', 'moderator'), updateAnnouncement);
+router.delete('/:id', authenticateUser, authorizeRoles('admin', 'moderator'), deleteAnnouncement);
 
 export default router;

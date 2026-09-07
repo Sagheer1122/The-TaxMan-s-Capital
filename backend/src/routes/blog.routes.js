@@ -12,8 +12,8 @@ const router = express.Router();
 
 router.get('/', optionalAuth, getBlogs);
 router.get('/:id', optionalAuth, getBlogById);
-router.post('/', authenticateUser, authorizeRoles('admin'), createBlog);
-router.put('/:id', authenticateUser, authorizeRoles('admin'), updateBlog);
-router.delete('/:id', authenticateUser, authorizeRoles('admin'), deleteBlog);
+router.post('/', authenticateUser, authorizeRoles('admin', 'moderator'), createBlog);
+router.put('/:id', authenticateUser, authorizeRoles('admin', 'moderator'), updateBlog);
+router.delete('/:id', authenticateUser, authorizeRoles('admin', 'moderator'), deleteBlog);
 
 export default router;

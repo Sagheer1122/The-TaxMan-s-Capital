@@ -95,9 +95,18 @@ const saveLocalStorageTable = (tableName, data) => {
   }
 };
 
-export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raza", session, onProfileUpdate, onNavigateHome }) {
+export default function AdminDashboard({
+  onLogout,
+  currentAdminName = "Ahmad Raza",
+  session,
+  onProfileUpdate,
+  onNavigateHome,
+  isModerator = false,
+  initialSubTab = 'Dashboard'
+}) {
+  const effectiveIsModerator = Boolean(isModerator || session?.user?.role === 'moderator');
   // State for Navigation
-  const [activeSubTab, setActiveSubTab] = useState('Dashboard');
+  const [activeSubTab, setActiveSubTab] = useState(() => (effectiveIsModerator && initialSubTab === 'Users List' ? 'Dashboard' : initialSubTab));
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
 
@@ -538,7 +547,7 @@ export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raz
     setLoading(true);
     try {
       const [fetchedUsers, fetchedInquiries, fetchedJobs, fetchedResources, fetchedAnnouncements, fetchedBlogs] = await Promise.all([
-        getAllUsers().catch(() => null),
+        effectiveIsModerator ? Promise.resolve(null) : getAllUsers().catch(() => null),
         getInquiries().catch(() => null),
         getAllAdminJobs().catch(() => null),
         getAllAdminResources().catch(() => null),
@@ -560,9 +569,11 @@ export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raz
         return 'admin@taxmancapital.com';
       })();
       const activeAdminName = session?.user?.name || currentAdminName || 'Saboor Ahmad CA';
-      const activeAdminRole = session?.user?.role || 'team_head';
+      const activeAdminRole = session?.user?.role || (effectiveIsModerator ? 'moderator' : 'team_head');
 
-      if (fetchedUsers && fetchedUsers.length > 0) {
+      if (effectiveIsModerator) {
+        setProfiles([]);
+      } else if (fetchedUsers && fetchedUsers.length > 0) {
         let mappedUsers = fetchedUsers.map(u => ({
           id: u._id || u.id,
           full_name: u.name || u.fullName || u.full_name,
@@ -1398,9 +1409,9 @@ export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raz
             { id: 'Videos & Podcasts', label: 'Videos & Podcasts', icon: <Tv className="w-4.5 h-4.5" /> },
             { id: 'Announcements', label: 'Announcements', icon: <Calendar className="w-4.5 h-4.5" /> },
             { id: 'Blog Posts', label: 'Blog Articles', icon: <BookOpen className="w-4.5 h-4.5" /> },
-            { id: 'Users List', label: 'Manage Users', icon: <Users className="w-4.5 h-4.5" /> },
+            ...(!effectiveIsModerator ? [{ id: 'Users List', label: 'Manage Users', icon: <Users className="w-4.5 h-4.5" /> }] : []),
             { id: 'Messages', label: 'Contact Messages', icon: <MessageSquare className="w-4.5 h-4.5" />, badge: messages.length },
-            { id: 'Profile', label: 'Admin Profile', icon: <User className="w-4.5 h-4.5" /> },
+            { id: 'Profile', label: effectiveIsModerator ? 'Moderator Profile' : 'Admin Profile', icon: <User className="w-4.5 h-4.5" /> },
           ].map(item => {
             const isActive = activeSubTab === item.id;
             return (
@@ -1449,7 +1460,9 @@ export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raz
               </div>
               <div className="flex flex-col truncate">
                 <span className="text-xs font-bold text-white truncate">{adminProfile.full_name}</span>
-                <span className="text-[9px] text-brandGreen font-semibold mt-0.5 truncate">CA Final Student / Admin</span>
+                <span className="text-[9px] text-brandGreen font-semibold mt-0.5 truncate">
+                  {effectiveIsModerator ? 'Content Moderator / Staff' : 'CA Final Student / Admin'}
+                </span>
               </div>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
@@ -2015,42 +2028,44 @@ export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raz
                   </button>
                 </div>
 
-                {/* Card 7: User Profiles */}
-                <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between hover:border-brandGreen/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 text-left">
-                  <div>
-                    <div className="flex items-center justify-between mb-4 border-b border-gray-50 pb-2">
-                      <div className="flex items-center space-x-2">
-                        <Users className="w-5 h-5 text-teal-500" />
-                        <h3 className="font-black text-sm text-[#090C11]">Registered Users</h3>
-                      </div>
-                      <span className="px-2 py-0.5 bg-teal-500/10 text-[9px] font-black text-teal-600 rounded">
-                        {profiles.length} Accounts
-                      </span>
-                    </div>
-                    <div className="space-y-3 mb-4">
-                      {profiles.slice(0, 3).map((p, idx) => (
-                        <div key={idx} className="text-xs bg-[#F8F9FB] hover:bg-teal-50/20 p-2.5 rounded-xl flex items-center justify-between font-semibold border border-transparent hover:border-teal-500/10 transition-all cursor-pointer hover:translate-x-0.5 duration-200">
-                          <div className="truncate pr-2">
-                            <h4 className="text-[#090C11] truncate">{p.full_name}</h4>
-                            <span className="text-[9px] text-gray-400">@{p.username}</span>
-                          </div>
-                          <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${p.role === 'admin' ? 'bg-brandGreen/10 text-brandGreen-dark' : 'bg-emerald-500/10 text-emerald-600'
-                            }`}>{p.role}</span>
+                {/* Card 7: User Profiles (Admin Only - Hidden for Moderator) */}
+                {!effectiveIsModerator && (
+                  <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between hover:border-brandGreen/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 text-left">
+                    <div>
+                      <div className="flex items-center justify-between mb-4 border-b border-gray-50 pb-2">
+                        <div className="flex items-center space-x-2">
+                          <Users className="w-5 h-5 text-teal-500" />
+                          <h3 className="font-black text-sm text-[#090C11]">Registered Users</h3>
                         </div>
-                      ))}
-                      {profiles.length === 0 && (
-                        <p className="text-[11px] text-gray-400 italic py-4 text-center font-normal">No registered user profiles found.</p>
-                      )}
+                        <span className="px-2 py-0.5 bg-teal-500/10 text-[9px] font-black text-teal-600 rounded">
+                          {profiles.length} Accounts
+                        </span>
+                      </div>
+                      <div className="space-y-3 mb-4">
+                        {profiles.slice(0, 3).map((p, idx) => (
+                          <div key={idx} className="text-xs bg-[#F8F9FB] hover:bg-teal-50/20 p-2.5 rounded-xl flex items-center justify-between font-semibold border border-transparent hover:border-teal-500/10 transition-all cursor-pointer hover:translate-x-0.5 duration-200">
+                            <div className="truncate pr-2">
+                              <h4 className="text-[#090C11] truncate">{p.full_name}</h4>
+                              <span className="text-[9px] text-gray-400">@{p.username}</span>
+                            </div>
+                            <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${p.role === 'admin' ? 'bg-brandGreen/10 text-brandGreen-dark' : 'bg-emerald-500/10 text-emerald-600'
+                              }`}>{p.role}</span>
+                          </div>
+                        ))}
+                        {profiles.length === 0 && (
+                          <p className="text-[11px] text-gray-400 italic py-4 text-center font-normal">No registered user profiles found.</p>
+                        )}
+                      </div>
                     </div>
+                    <button
+                      onClick={() => setActiveSubTab('Users List')}
+                      className="w-full py-2 bg-[#F8F9FB] hover:bg-brandGreen/10 text-[#090C11] hover:text-brandGreen-dark border border-gray-100 hover:border-brandGreen/20 font-bold text-xs rounded-xl flex items-center justify-center space-x-1 transition-all cursor-pointer"
+                    >
+                      <span>Manage User Accounts</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setActiveSubTab('Users List')}
-                    className="w-full py-2 bg-[#F8F9FB] hover:bg-brandGreen/10 text-[#090C11] hover:text-brandGreen-dark border border-gray-100 hover:border-brandGreen/20 font-bold text-xs rounded-xl flex items-center justify-center space-x-1 transition-all cursor-pointer"
-                  >
-                    <span>Manage User Accounts</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                )}
 
                 {/* Card 8: Career Guidance & Counseling */}
                 <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between hover:border-brandGreen/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 text-left">
@@ -4165,6 +4180,23 @@ export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raz
 
           {/* VIEW: USERS LIST */}
           {activeSubTab === 'Users List' && !loading && (
+            effectiveIsModerator ? (
+              <div className="bg-white p-8 rounded-3xl border border-red-100 shadow-sm text-center space-y-4 max-w-lg mx-auto mt-12 animate-fadeIn">
+                <div className="w-14 h-14 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto text-2xl font-black">
+                  🚫
+                </div>
+                <h2 className="text-xl font-black text-[#090C11]">Access Denied</h2>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  As a Content Moderator, you have access to manage website content, announcements, and resources, but User & Role Management is restricted exclusively to Platform Administrators.
+                </p>
+                <button
+                  onClick={() => setActiveSubTab('Dashboard')}
+                  className="px-5 py-2.5 bg-brandGreen hover:bg-brandGreen-dark text-white font-bold text-xs rounded-xl shadow transition-all cursor-pointer"
+                >
+                  Return to Dashboard
+                </button>
+              </div>
+            ) : (
             <div className="space-y-6 animate-fadeIn">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
@@ -4204,6 +4236,7 @@ export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raz
                       <option value="All">All Roles</option>
                       <option value="student">Student / User</option>
                       <option value="mentor">Mentor</option>
+                      <option value="moderator">Moderator</option>
                       <option value="admin">Administrator</option>
                       <option value="team_head">Team Head</option>
                     </select>
@@ -4542,6 +4575,7 @@ export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raz
                 );
               })()}
             </div>
+            )
           )}
 
           {/* VIEW: MESSAGES (Contact Inbox) */}
@@ -5956,6 +5990,7 @@ export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raz
                   >
                     <option value="student">Student / Candidate</option>
                     <option value="mentor">Mentor</option>
+                    <option value="moderator">Moderator (Content Management)</option>
                     <option value="admin">Administrator</option>
                     <option value="team_head">Team Head</option>
                   </select>
@@ -6120,6 +6155,7 @@ export default function AdminDashboard({ onLogout, currentAdminName = "Ahmad Raz
               >
                 <option value="student">Student / Candidate</option>
                 <option value="mentor">Mentor</option>
+                <option value="moderator">Moderator (Content Management)</option>
                 <option value="admin">Administrator</option>
               </select>
             </div>

@@ -91,6 +91,14 @@ export const getAllUsers = async () => {
     }
   ];
 
+  let sessionUser = {};
+  try {
+    sessionUser = JSON.parse(localStorage.getItem('taxman_user') || '{}');
+  } catch {}
+  if (sessionUser?.role === 'moderator') {
+    return [];
+  }
+
   let apiUsers = [];
   try {
     const res = await api.get('/admin/users');
@@ -99,6 +107,9 @@ export const getAllUsers = async () => {
       apiUsers = users;
     }
   } catch (err) {
+    if (err.response?.status === 403 || err.message?.includes('403') || err.message?.includes('Access Denied')) {
+      return [];
+    }
     console.warn('[AdminService] Users API error, using local/cached users:', err.message);
   }
 

@@ -41,6 +41,20 @@ export const SEED_MENTOR = {
   bio: 'Senior Audit Manager with 8+ years experience guiding CA & ACCA candidates.'
 };
 
+export const SEED_MODERATOR = {
+  name: 'Hamza Content Lead',
+  email: 'moderator@taxmancapital.com',
+  username: 'moderator',
+  password: 'ModeratorPassword123!',
+  role: 'moderator',
+  qualification: 'CAF',
+  level: 'CAF',
+  phone: '+92 300 7654321',
+  city: 'Lahore',
+  institute: 'ICAP Student',
+  bio: 'Content Operations & Resource Curator for The TaxMan\'s Capital.'
+};
+
 export const SEED_JOBS = [
   {
     title: 'CA Articleship Training Induction',

@@ -84,6 +84,9 @@ export const getInitialSessionSync = () => {
       return null;
     }
 
+    const userEmail = (user.email || '').toLowerCase();
+    const derivedRole = user.role || (userEmail.includes('admin') ? 'admin' : (userEmail.includes('moderator') ? 'moderator' : 'student'));
+
     // Format consistent session object compatible with both frontend and backend
     const session = {
       access_token: token || 'mock_token',
@@ -92,18 +95,18 @@ export const getInitialSessionSync = () => {
         id: user.id || user._id || 'user_' + Date.now(),
         _id: user._id || user.id,
         email: user.email,
-        name: user.name || user.fullName || user.user_metadata?.full_name || 'User',
-        fullName: user.name || user.fullName || user.user_metadata?.full_name || 'User',
+        name: user.name || user.fullName || user.user_metadata?.full_name || (derivedRole === 'moderator' ? 'Content Moderator' : 'User'),
+        fullName: user.name || user.fullName || user.user_metadata?.full_name || (derivedRole === 'moderator' ? 'Content Moderator' : 'User'),
         username: user.username || user.email?.split('@')[0] || 'user',
-        role: user.role || (user.email?.toLowerCase().includes('admin') ? 'admin' : 'student'),
+        role: derivedRole,
         avatar_url: user.avatar_url || user.profileImage || '',
         profileImage: user.profileImage || user.avatar_url || '',
         qualification: user.qualification || 'CAF',
         level: user.level || 'CAF',
         user_metadata: {
-          full_name: user.name || user.fullName || 'User',
+          full_name: user.name || user.fullName || (derivedRole === 'moderator' ? 'Content Moderator' : 'User'),
           username: user.username || user.email?.split('@')[0] || 'user',
-          role: user.role || (user.email?.toLowerCase().includes('admin') ? 'admin' : 'student')
+          role: derivedRole
         }
       }
     };
@@ -294,7 +297,10 @@ export const loginUser = async (email, password) => {
     // If backend is unreachable or CORS blocked, look up user from local registrations or provide fallback session
     if (cleanEmail) {
       const isAdmin = cleanEmail.includes('admin') || cleanEmail === 'admin@taxman.com';
-      
+      const isModerator = cleanEmail.includes('moderator');
+      const fallbackRole = isAdmin ? 'admin' : (isModerator ? 'moderator' : 'student');
+      const fallbackName = isAdmin ? 'Platform Administrator' : (isModerator ? 'Content Moderator' : cleanEmail.split('@')[0]);
+
       let localMatchedUser = null;
       try {
         const registered = JSON.parse(localStorage.getItem('taxman_registered_users') || '[]');
@@ -305,18 +311,18 @@ export const loginUser = async (email, password) => {
         id: localMatchedUser?.id || localMatchedUser?._id || ('user_' + Date.now()),
         _id: localMatchedUser?._id || localMatchedUser?.id || ('user_' + Date.now()),
         email: cleanEmail,
-        name: localMatchedUser?.name || localMatchedUser?.fullName || (isAdmin ? 'Platform Administrator' : cleanEmail.split('@')[0]),
-        fullName: localMatchedUser?.fullName || localMatchedUser?.name || (isAdmin ? 'Platform Administrator' : cleanEmail.split('@')[0]),
+        name: localMatchedUser?.name || localMatchedUser?.fullName || fallbackName,
+        fullName: localMatchedUser?.fullName || localMatchedUser?.name || fallbackName,
         username: localMatchedUser?.username || cleanEmail.split('@')[0],
-        role: localMatchedUser?.role || (isAdmin ? 'admin' : 'student'),
+        role: localMatchedUser?.role || fallbackRole,
         avatar_url: localMatchedUser?.avatar_url || localMatchedUser?.profileImage || '',
         profileImage: localMatchedUser?.profileImage || localMatchedUser?.avatar_url || '',
         qualification: localMatchedUser?.qualification || localMatchedUser?.level || 'CAF Qualified',
         level: localMatchedUser?.level || localMatchedUser?.qualification || 'CAF',
         user_metadata: {
-          full_name: localMatchedUser?.name || localMatchedUser?.fullName || (isAdmin ? 'Platform Administrator' : cleanEmail.split('@')[0]),
+          full_name: localMatchedUser?.name || localMatchedUser?.fullName || fallbackName,
           username: localMatchedUser?.username || cleanEmail.split('@')[0],
-          role: localMatchedUser?.role || (isAdmin ? 'admin' : 'student')
+          role: localMatchedUser?.role || fallbackRole
         }
       };
 

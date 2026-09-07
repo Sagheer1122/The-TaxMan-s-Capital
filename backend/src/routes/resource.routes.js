@@ -16,13 +16,13 @@ import { authenticateUser, authorizeRoles, optionalAuth } from '../middleware/au
 const router = express.Router();
 
 router.get('/', optionalAuth, getResources);
-router.get('/requests', authenticateUser, authorizeRoles('admin'), getResourceRequests);
+router.get('/requests', authenticateUser, authorizeRoles('admin', 'moderator'), getResourceRequests);
 router.get('/:id', optionalAuth, getResourceById);
-router.post('/', authenticateUser, authorizeRoles('admin', 'mentor'), createResource);
-router.put('/:id', authenticateUser, authorizeRoles('admin', 'mentor'), updateResource);
-router.delete('/:id', authenticateUser, authorizeRoles('admin'), deleteResource);
-router.post('/:id/approve', authenticateUser, authorizeRoles('admin'), approveResource);
-router.post('/:id/reject', authenticateUser, authorizeRoles('admin'), rejectResource);
+router.post('/', authenticateUser, authorizeRoles('admin', 'moderator', 'mentor'), createResource);
+router.put('/:id', authenticateUser, authorizeRoles('admin', 'moderator', 'mentor'), updateResource);
+router.delete('/:id', authenticateUser, authorizeRoles('admin', 'moderator'), deleteResource);
+router.post('/:id/approve', authenticateUser, authorizeRoles('admin', 'moderator'), approveResource);
+router.post('/:id/reject', authenticateUser, authorizeRoles('admin', 'moderator'), rejectResource);
 router.post('/:id/download', incrementDownload);
 router.post('/requests', optionalAuth, requestResource);
 

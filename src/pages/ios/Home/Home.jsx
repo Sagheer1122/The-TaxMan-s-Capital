@@ -64,7 +64,14 @@ import { toggleBookmark as toggleUnifiedBookmark, getBookmarks, onBookmarksChang
 import { INITIAL_JOBS } from '../../../data/jobsData';
 const parseRouteToTabState = () => {
   if (typeof window === 'undefined') {
-    return { tab: 'Home', resourcesCategory: 'All', loginStartFlipped: false, scrollTarget: null };
+    return {
+      tab: 'Home',
+      resourcesCategory: 'All',
+      loginStartFlipped: false,
+      scrollTarget: null,
+      requestedAdminSubTab: 'Dashboard',
+      isRestrictedAdminRoute: false
+    };
   }
   const pathname = (window.location.pathname || '').replace(/^\/+|\/+$/g, '').toLowerCase();
   const hash = (window.location.hash || '').replace(/^#+/, '').toLowerCase();
@@ -73,8 +80,34 @@ const parseRouteToTabState = () => {
   let resourcesCategory = 'All';
   let loginStartFlipped = false;
   let scrollTarget = null;
+  let requestedAdminSubTab = 'Dashboard';
+  let isRestrictedAdminRoute = false;
 
-  if (route === 'jobs') {
+  // Direct protection for admin user management and roles routes
+  if (
+    route === 'admin/users' ||
+    route.startsWith('admin/users/') ||
+    route === 'admin/roles' ||
+    route.startsWith('admin/roles/') ||
+    route === 'admin/moderators' ||
+    route.startsWith('admin/moderators/')
+  ) {
+    tab = 'AdminDashboard';
+    requestedAdminSubTab = 'Users List';
+    isRestrictedAdminRoute = true;
+  } else if (route === 'admin' || route === 'moderator' || route.startsWith('admin/')) {
+    tab = 'AdminDashboard';
+    if (route.includes('ai')) requestedAdminSubTab = 'AI Control Center';
+    else if (route.includes('pakistan-jobs') || route.includes('jobs')) requestedAdminSubTab = 'Pakistan Jobs';
+    else if (route.includes('inductions')) requestedAdminSubTab = 'Inductions';
+    else if (route.includes('overseas')) requestedAdminSubTab = 'Overseas Jobs';
+    else if (route.includes('resources')) requestedAdminSubTab = 'Resources';
+    else if (route.includes('announcements')) requestedAdminSubTab = 'Announcements';
+    else if (route.includes('blogs') || route.includes('blog')) requestedAdminSubTab = 'Blog Posts';
+    else if (route.includes('messages')) requestedAdminSubTab = 'Messages';
+    else if (route.includes('community')) requestedAdminSubTab = 'Community';
+    else requestedAdminSubTab = 'Dashboard';
+  } else if (route === 'jobs') {
     tab = 'Jobs';
   } else if (route === 'inductions') {
     tab = 'Inductions';
@@ -93,8 +126,6 @@ const parseRouteToTabState = () => {
   } else if (route === 'vision' || route === 'our-vision') {
     tab = 'Our Mission';
     scrollTarget = 'our-vision';
-  } else if (route === 'admin') {
-    tab = 'AdminDashboard';
   } else if (route === 'dashboard' || route === 'user-dashboard') {
     tab = 'UserDashboard';
   } else if (route.startsWith('resources')) {
@@ -133,7 +164,14 @@ const parseRouteToTabState = () => {
     }
   }
 
-  return { tab, resourcesCategory, loginStartFlipped, scrollTarget };
+  return {
+    tab,
+    resourcesCategory,
+    loginStartFlipped,
+    scrollTarget,
+    requestedAdminSubTab,
+    isRestrictedAdminRoute
+  };
 };
 
 const TAB_TO_PATH = {
@@ -186,6 +224,10 @@ export default function Home({ session, sessionLoading }) {
     initialUser?.role === 'team_head' ||
     initialUser?.email?.toLowerCase().includes('admin')
   );
+  const initialIsModerator = Boolean(
+    initialUser?.role === 'moderator' ||
+    initialUser?.email?.toLowerCase().includes('moderator')
+  );
   const initialUsername = initialUser?.full_name || initialUser?.username || initialUser?.name || initialUser?.email?.split('@')[0] || '';
 
   const [isLoggedIn, setIsLoggedIn] = useState(() => Boolean(initialUser));
@@ -193,6 +235,9 @@ export default function Home({ session, sessionLoading }) {
   const [username, setUsername] = useState(initialUsername);
   const [avatarLetter, setAvatarLetter] = useState(() => (initialUsername ? initialUsername.charAt(0).toUpperCase() : 'U'));
   const [isAdmin, setIsAdmin] = useState(initialIsAdmin);
+  const [isModerator, setIsModerator] = useState(initialIsModerator);
+  const [isRestrictedAdminRoute, setIsRestrictedAdminRoute] = useState(initialNav.isRestrictedAdminRoute || false);
+  const [requestedAdminSubTab, setRequestedAdminSubTab] = useState(initialNav.requestedAdminSubTab || 'Dashboard');
   const [avatarUrl, setAvatarUrl] = useState(() => initialUser?.avatar_url || initialUser?.profileImage || '');
   const [authLoading, setAuthLoading] = useState(() => !initialSync);
   const [savedJobs, setSavedJobs] = useState([]);
@@ -342,6 +387,7 @@ export default function Home({ session, sessionLoading }) {
       setUsername('');
       setAvatarLetter('U');
       setIsAdmin(false);
+      setIsModerator(false);
       setAvatarUrl('');
       setAuthLoading(false);
       return;
@@ -353,20 +399,36 @@ export default function Home({ session, sessionLoading }) {
     setUsername(displayUsername);
     setAvatarLetter(displayUsername.charAt(0).toUpperCase());
     const isRoleAdmin = session.user?.role === 'admin' || session.user?.role === 'team_head' || session.user?.email?.toLowerCase().includes('admin');
+    const isRoleModerator = session.user?.role === 'moderator' || session.user?.email?.toLowerCase().includes('moderator');
     setIsAdmin(isRoleAdmin);
+    setIsModerator(isRoleModerator);
     setAvatarUrl(session.user?.avatar_url || session.user?.profileImage || '');
     setAuthLoading(false);
 
     // Trigger profile prompt check for regular users
     const isProfileIncomplete = !session.user?.avatar_url && !session.user?.profileImage;
     const promptDismissed = sessionStorage.getItem('dismissed_profile_prompt') === 'true';
-    if (isProfileIncomplete && !promptDismissed && !isRoleAdmin) {
+    if (isProfileIncomplete && !promptDismissed && !isRoleAdmin && !isRoleModerator) {
       const promptTimer = setTimeout(() => {
         setShowProfilePrompt(true);
       }, 2000);
       return () => clearTimeout(promptTimer);
     }
   }, [session, sessionLoading]);
+
+  // Handle browser back/forward and direct URL popstate changes
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const nav = parseRouteToTabState();
+      setActiveTab(nav.tab);
+      setIsRestrictedAdminRoute(Boolean(nav.isRestrictedAdminRoute));
+      if (nav.requestedAdminSubTab) {
+        setRequestedAdminSubTab(nav.requestedAdminSubTab);
+      }
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
   const [selectedJobIdForModal, setSelectedJobIdForModal] = useState(null);
   const [selectedCommunityIdForModal, setSelectedCommunityIdForModal] = useState(null);
   const [selectedAnnouncementIdForModal, setSelectedAnnouncementIdForModal] = useState(null);
@@ -1114,11 +1176,11 @@ export default function Home({ session, sessionLoading }) {
                           </div>
                           <div className="flex flex-col min-w-0">
                             <span className="text-white text-xs font-bold truncate">
-                              {username || 'Student'}
+                              {username || (isModerator ? 'Content Moderator' : 'Student')}
                             </span>
                             <span className="text-[10px] text-brandGreen font-semibold uppercase tracking-wider flex items-center gap-1.5 mt-0.5">
                               <span className="w-1.5 h-1.5 rounded-full bg-brandGreen animate-pulse" />
-                              {isAdmin ? 'Administrator' : 'Student Trainee'}
+                              {isAdmin ? 'Administrator' : (isModerator ? 'Content Moderator' : 'Student Trainee')}
                             </span>
                           </div>
                         </div>
@@ -1129,7 +1191,7 @@ export default function Home({ session, sessionLoading }) {
                           <button
                             onClick={() => {
                               setUserDropdownOpen(false);
-                              if (isAdmin) {
+                              if (isAdmin || isModerator) {
                                 setActiveTab('AdminDashboard');
                               } else {
                                 setUserDashboardTab('Overview');
@@ -1196,7 +1258,7 @@ export default function Home({ session, sessionLoading }) {
                 {isLoggedIn ? (
                   <button
                     onClick={() => {
-                      if (isAdmin) {
+                      if (isAdmin || isModerator) {
                         setActiveTab('AdminDashboard');
                       } else {
                         setUserDashboardTab('Overview');
@@ -1204,7 +1266,7 @@ export default function Home({ session, sessionLoading }) {
                       }
                     }}
                     className="w-8 h-8 rounded-full bg-[#0A2540] text-white font-bold flex items-center justify-center text-xs overflow-hidden border border-white/20 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-sm"
-                    title={isAdmin ? 'Admin Dashboard' : 'User Dashboard'}
+                    title={isAdmin ? 'Admin Dashboard' : (isModerator ? 'Moderator Dashboard' : 'User Dashboard')}
                     aria-label="User profile and dashboard"
                   >
                     {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : avatarLetter}
@@ -1339,15 +1401,15 @@ export default function Home({ session, sessionLoading }) {
                         {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : avatarLetter}
                       </div>
                       <div className="flex flex-col text-left">
-                        <span className="text-white text-xs font-bold leading-tight">{username}</span>
-                        <span className="text-[10px] text-brandGreen font-semibold uppercase">{isAdmin ? 'Admin' : 'Student'}</span>
+                        <span className="text-white text-xs font-bold leading-tight">{username || (isModerator ? 'Content Moderator' : 'Student')}</span>
+                        <span className="text-[10px] text-brandGreen font-semibold uppercase">{isAdmin ? 'Admin' : (isModerator ? 'Moderator' : 'Student')}</span>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => {
                           setMobileMenuOpen(false);
-                          if (isAdmin) {
+                          if (isAdmin || isModerator) {
                             setActiveTab('AdminDashboard');
                           } else {
                             setUserDashboardTab('Overview');
@@ -1795,29 +1857,75 @@ export default function Home({ session, sessionLoading }) {
               <div className="w-8 h-8 border-2 border-brandGreen border-t-transparent rounded-full animate-spin"></div>
               <p className="text-xs font-semibold text-gray-400">Verifying administrator access...</p>
             </div>
-          ) : isAdmin ? (
-            <AdminDashboard
-              onLogout={async () => {
-                await logoutUser();
-                setIsLoggedIn(false);
-                setActiveTab('Home');
-              }}
-              currentAdminName={username || 'Ahmad Raza'}
-              session={session}
-              onProfileUpdate={(newProfile) => {
-                if (newProfile.full_name) {
-                  setUsername(newProfile.full_name);
-                  setAvatarLetter(newProfile.full_name.charAt(0).toUpperCase());
-                }
-                if (newProfile.avatar_url || newProfile.profileImage) {
-                  setAvatarUrl(newProfile.avatar_url || newProfile.profileImage);
-                }
-              }}
-              onNavigateHome={() => {
-                setActiveTab('Home');
-                updateAppUrl('/');
-              }}
-            />
+          ) : (isAdmin || isModerator) ? (
+            (isRestrictedAdminRoute && isModerator && !isAdmin) ? (
+              /* HTTP 403 Forbidden screen for direct restricted route access by Moderator */
+              <div className="min-h-[85vh] bg-[#02152c] text-white flex items-center justify-center p-6 animate-fadeIn">
+                <div className="max-w-lg w-full bg-white/5 border border-red-500/30 rounded-3xl p-8 text-center backdrop-blur-xl shadow-2xl space-y-6">
+                  <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto text-red-400 text-3xl shadow-lg">
+                    🚫
+                  </div>
+                  <div className="space-y-2">
+                    <span className="px-3 py-1 bg-red-500/20 text-red-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-red-500/30">
+                      HTTP 403 Forbidden
+                    </span>
+                    <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white mt-2">
+                      Access Denied: Admin Privileges Required
+                    </h3>
+                    <p className="text-xs sm:text-sm text-gray-300 leading-relaxed pt-1">
+                      You are signed in as a <span className="text-brandGreen font-bold">Content Moderator</span>. Your role permits full management of website content, resources, events, announcements, and directories, but <span className="text-red-400 font-semibold">User Manager, Role Assignments, and Moderator Management</span> are strictly restricted to Platform Administrators.
+                    </p>
+                  </div>
+                  <div className="space-y-3 pt-2">
+                    <button
+                      onClick={() => {
+                        setIsRestrictedAdminRoute(false);
+                        setRequestedAdminSubTab('Dashboard');
+                        setActiveTab('AdminDashboard');
+                        updateAppUrl('/admin');
+                      }}
+                      className="w-full py-3 px-4 bg-brandGreen hover:bg-brandGreen-dark text-white font-black text-xs sm:text-sm rounded-2xl transition-all shadow-lg shadow-brandGreen/20 flex items-center justify-center space-x-2 cursor-pointer"
+                    >
+                      <span>Return to Moderator Dashboard</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveTab('Home');
+                        updateAppUrl('/');
+                      }}
+                      className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-bold text-xs sm:text-sm rounded-2xl transition-all cursor-pointer"
+                    >
+                      Go to Homepage
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <AdminDashboard
+                onLogout={async () => {
+                  await logoutUser();
+                  setIsLoggedIn(false);
+                  setActiveTab('Home');
+                }}
+                currentAdminName={username || (isModerator && !isAdmin ? 'Content Moderator' : 'Ahmad Raza')}
+                session={session}
+                isModerator={isModerator && !isAdmin}
+                initialSubTab={requestedAdminSubTab || 'Dashboard'}
+                onProfileUpdate={(newProfile) => {
+                  if (newProfile.full_name) {
+                    setUsername(newProfile.full_name);
+                    setAvatarLetter(newProfile.full_name.charAt(0).toUpperCase());
+                  }
+                  if (newProfile.avatar_url || newProfile.profileImage) {
+                    setAvatarUrl(newProfile.avatar_url || newProfile.profileImage);
+                  }
+                }}
+                onNavigateHome={() => {
+                  setActiveTab('Home');
+                  updateAppUrl('/');
+                }}
+              />
+            )
           ) : (
             <div className="min-h-[85vh] bg-[#02152c] text-white flex items-center justify-center p-6">
               <div className="max-w-md w-full bg-white/5 border border-white/10 rounded-3xl p-8 text-center backdrop-blur-xl shadow-2xl space-y-6">
@@ -1825,9 +1933,9 @@ export default function Home({ session, sessionLoading }) {
                   🛡️
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-xl sm:text-2xl font-black tracking-tight">Admin Privileges Required</h3>
+                  <h3 className="text-xl sm:text-2xl font-black tracking-tight">Admin / Moderator Privileges Required</h3>
                   <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">
-                    You are currently signed in as <span className="text-white font-bold">{username || 'Student'}</span> (<span className="text-brandGreen font-semibold">{session?.user?.role || 'student'}</span>). The Admin Panel is restricted to platform administrators.
+                    You are currently signed in as <span className="text-white font-bold">{username || 'Student'}</span> (<span className="text-brandGreen font-semibold">{session?.user?.role || 'student'}</span>). The Management Panel is restricted to authorized platform administrators and content moderators.
                   </p>
                 </div>
                 <div className="space-y-3 pt-2">
@@ -1837,7 +1945,7 @@ export default function Home({ session, sessionLoading }) {
                     }}
                     className="w-full py-3 px-4 bg-brandGreen hover:bg-brandGreen-dark text-white font-black text-xs sm:text-sm rounded-2xl transition-all shadow-lg shadow-brandGreen/20 flex items-center justify-center space-x-2 cursor-pointer"
                   >
-                    <span>Log In as Administrator</span>
+                    <span>Log In to Authorized Account</span>
                   </button>
                   <button
                     onClick={() => {
