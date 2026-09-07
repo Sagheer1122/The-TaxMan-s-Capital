@@ -594,30 +594,7 @@ export const getInquiries = async () => {
     console.warn('[AdminService] Inquiries fallback:', err.message);
   }
 
-  return [
-    {
-      _id: 'inq_1',
-      name: 'Bilal Tariq',
-      email: 'bilal.tariq@gmail.com',
-      phone: '+92 301 9876543',
-      level: 'CAF',
-      service: 'CV Review & Big 4 Prep',
-      message: 'Need urgent guidance on formatting my resume for PwC Fall audit trainee induction.',
-      createdAt: '2026-08-20',
-      status: 'pending'
-    },
-    {
-      _id: 'inq_2',
-      name: 'Ayesha Siddiqui',
-      email: 'ayesha.s@outlook.com',
-      phone: '+92 333 4567890',
-      level: 'ACCA',
-      service: 'Mentorship Session',
-      message: 'Looking for 1-on-1 counseling regarding moving from mid-tier firm to Big 4 Advisory.',
-      createdAt: '2026-08-22',
-      status: 'pending'
-    }
-  ];
+  return [];
 };
 
 export const replyToInquiry = async (inquiryId, replyText) => {

@@ -8,14 +8,11 @@ import {
   ShieldAlert,
   CheckCircle2,
   BookOpen,
-  TrendingUp,
-  Calendar,
   Users,
   User,
   Briefcase,
   Globe,
-  Award,
-  Sparkles
+  Award
 } from 'lucide-react';
 import { loginUser, registerUser } from '../../../services/authService';
 import logoImg from '../../../assets/logo.png';
@@ -28,6 +25,7 @@ export default function Login({ onLoginSuccess, onBack, startFlipped = false, on
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Sign Up Form States
   const [signUpName, setSignUpName] = useState('');
@@ -75,7 +73,7 @@ export default function Login({ onLoginSuccess, onBack, startFlipped = false, on
     setSuccessMsg('');
 
     try {
-      const session = await loginUser(loginEmail, loginPassword);
+      const session = await loginUser(loginEmail, loginPassword, rememberMe);
 
       setSuccessMsg('Welcome back! Entering Home Portal...');
       setTimeout(() => {
@@ -382,7 +380,8 @@ export default function Login({ onLoginSuccess, onBack, startFlipped = false, on
                   <label className="flex items-center cursor-pointer select-none">
                     <input
                       type="checkbox"
-                      defaultChecked
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
                       className="w-4 h-4 rounded border-gray-300 text-[#00C853] focus:ring-[#00C853] mr-2 accent-[#00C853] cursor-pointer"
                     />
                     Remember me

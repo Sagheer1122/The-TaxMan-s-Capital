@@ -13,10 +13,6 @@ const bookmarkSchema = new mongoose.Schema(
       ref: 'Job',
       index: true
     },
-    opportunity: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Opportunity'
-    },
     resource: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Resource'

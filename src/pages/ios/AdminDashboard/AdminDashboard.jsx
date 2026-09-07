@@ -30,15 +30,10 @@ import {
   BookOpen,
   Eye,
   EyeOff,
-  Shield,
-  ShieldAlert,
-  ShieldCheck,
   Ban,
   CheckCircle,
   LayoutList,
   LayoutGrid,
-  Sparkles,
-  Brain,
   CheckCheck
 } from 'lucide-react';
 import logoImg from '../../../assets/logo.png';
@@ -66,13 +61,11 @@ import {
   getAllAdminAnnouncements,
   getInquiries,
   replyToInquiry,
-  deleteInquiry,
-  getAdminOverviewStats
+  deleteInquiry
 } from '../../../services/adminService';
 import { fetchBlogs, createBlog, updateBlog, deleteBlog } from '../../../services/blogService';
 import RichBlogEditor from '../../../components/blog/RichBlogEditor';
 import DualMediaUpload from '../../../components/common/DualMediaUpload';
-import { broadcastNotification } from '../../../services/notificationService';
 import { updateProfile } from '../../../services/authService';
 
 const updateProfileRole = updateUserRole;
@@ -373,15 +366,9 @@ export default function AdminDashboard({
     { id: '3', title: 'CV & Cover Letter Workshop', summary: 'Physical workshop at Lahore Office.', content: 'Interactive CV checking session...', category: 'General', event_date: '28 MAY' }
   ];
 
-  const mockMessages = [
-    { id: '1', name: 'Ali Raza', email: 'ali@gmail.com', phone: '03001234567', subject: 'Articleship Inquiry', category: 'General Inquiry', message: 'Hello, when is the KPMG induction starting?', created_at: '2026-06-23T10:00:00Z' },
-    { id: '2', name: 'Sara Khan', email: 'sara@yahoo.com', phone: '03217654321', subject: 'Career Counseling Appointment', category: 'Career Guidance', message: 'I need to schedule a counseling session with Saboor Ahmad.', created_at: '2026-06-24T15:30:00Z' }
-  ];
+  const mockMessages = [];
 
-  const mockRequests = [
-    { id: '1', name: 'Bilal Ahmad', resource_title: 'CFAP 1 Advanced Accounting Notes', category: 'CFAP & SCS (Finals)', notes: 'Need this urgently for June attempt.', created_at: '2026-06-24T12:00:00Z' },
-    { id: '2', name: 'Sana Malik', resource_title: 'Big 4 Interview Guide', category: 'Training/Induction', notes: 'Have an interview at PwC next week.', created_at: '2026-06-25T08:00:00Z' }
-  ];
+  const mockRequests = [];
 
   const mockCommunities = [
     { id: '1', title: 'CA Foundation Study Group', category_key: 'prc', badge: 'PRC Group', description: 'WhatsApp channel for entry level CA students.', members_count_text: '1,500+ Members', whatsapp_link: 'https://chat.whatsapp.com/example1' },
@@ -1315,7 +1302,7 @@ export default function AdminDashboard({
   // Get notifications count and list
   const getNotificationsList = () => {
     const list = [];
-    messages.slice(0, 5).forEach(m => {
+    messages.forEach(m => {
       list.push({
         id: `msg-${m.id}`,
         title: 'New Contact Inquiry',
@@ -1325,7 +1312,7 @@ export default function AdminDashboard({
         type: 'message'
       });
     });
-    requests.slice(0, 5).forEach(r => {
+    requests.forEach(r => {
       list.push({
         id: `req-${r.id}`,
         title: 'Study Resource Request',
@@ -1583,8 +1570,8 @@ export default function AdminDashboard({
                       </div>
                     </div>
 
-                    {/* Notification Items */}
-                    <div className="max-h-[300px] overflow-y-auto divide-y divide-gray-50">
+                    {/* Notification Items - Scrollable */}
+                    <div className="max-h-[380px] overflow-y-auto divide-y divide-gray-50 scrollbar-thin scrollbar-thumb-gray-200">
                       {notificationsList.map((n) => {
                         const isRead = adminReadIds.has(n.id);
                         return (
@@ -1632,30 +1619,6 @@ export default function AdminDashboard({
                           No notifications yet.
                         </div>
                       )}
-                    </div>
-
-                    {/* Footer */}
-                    <div className="px-4 py-2 border-t border-gray-100 bg-gray-50/60 flex items-center justify-between text-[11px]">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setNotificationsDropdownOpen(false);
-                          setActiveSubTab('Messages');
-                        }}
-                        className="text-brandGreen hover:underline font-bold cursor-pointer"
-                      >
-                        View Messages →
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setNotificationsDropdownOpen(false);
-                          setActiveSubTab('Resources');
-                        }}
-                        className="text-gray-500 hover:underline font-semibold cursor-pointer"
-                      >
-                        View Resources →
-                      </button>
                     </div>
                   </div>
                 </>

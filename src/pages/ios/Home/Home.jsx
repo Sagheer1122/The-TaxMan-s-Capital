@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Briefcase,
@@ -24,34 +24,30 @@ import {
   Bookmark,
   Globe,
   Sparkles,
-  Zap,
-  TrendingUp,
-  CheckCircle2,
   User,
   LayoutDashboard,
   LogOut,
   GraduationCap
 } from 'lucide-react';
-import { AnimatedCounter, AnimatedSection, AnimatedCard, PageTransition, AntigravityCanvas } from '../../../components/motion/MotionSystem';
+import { AnimatedCounter, AntigravityCanvas } from '../../../components/motion/MotionSystem';
 import mentorImage from '../../../assets/mentor_portrait.png';
 import logoImg from '../../../assets/logo.png';
-import tmBadge from '../../../assets/tm_badge.png';
-import Jobs from '../Jobs/Jobs';
-import Counseling from '../career_support/career_support';
-import Community from '../Community/Community';
-import Mission from '../Mission/Mission';
-import Resources from '../Resources/Resources';
-import Announcements from '../Announcements/Announcements';
-import Contact from '../Contact/Contact';
-import Login from '../Login/Login';
-import AdminDashboard from '../AdminDashboard/AdminDashboard';
-import UserDashboard from '../UserDashboard/UserDashboard';
-import Events from '../Events/Events';
-import Podcasts from '../Podcasts/Podcasts';
-import CareerTools from '../CareerTools/CareerTools';
-import Blog from '../Blog/Blog';
+const Jobs = lazy(() => import('../Jobs/Jobs'));
+const Counseling = lazy(() => import('../career_support/career_support'));
+const Community = lazy(() => import('../Community/Community'));
+const Mission = lazy(() => import('../Mission/Mission'));
+const Resources = lazy(() => import('../Resources/Resources'));
+const Announcements = lazy(() => import('../Announcements/Announcements'));
+const Contact = lazy(() => import('../Contact/Contact'));
+const Login = lazy(() => import('../Login/Login'));
+const AdminDashboard = lazy(() => import('../AdminDashboard/AdminDashboard'));
+const UserDashboard = lazy(() => import('../UserDashboard/UserDashboard'));
+const Events = lazy(() => import('../Events/Events'));
+const Podcasts = lazy(() => import('../Podcasts/Podcasts'));
+const CareerTools = lazy(() => import('../CareerTools/CareerTools'));
+const Blog = lazy(() => import('../Blog/Blog'));
+const BeginnerGuide = lazy(() => import('../BeginnerGuide/BeginnerGuide'));
 import NotificationPanel from '../../../components/NotificationPanel';
-import BeginnerGuide from '../BeginnerGuide/BeginnerGuide';
 import TermsAndPrivacyModal from '../../../components/legal/TermsAndPrivacyModal';
 import {
   getNotifications,
@@ -59,8 +55,8 @@ import {
   markAllNotificationsAsRead,
   deleteNotification
 } from '../../../services/notificationService';
-import { getProfiles, logoutUser, registerUser, loginUser, requireAuth, getInitialSessionSync } from '../../../services/authService';
-import { toggleBookmark as toggleUnifiedBookmark, getBookmarks, onBookmarksChange } from '../../../services/bookmarkService';
+import { logoutUser, requireAuth, getInitialSessionSync } from '../../../services/authService';
+import { toggleBookmark as toggleUnifiedBookmark } from '../../../services/bookmarkService';
 import { INITIAL_JOBS } from '../../../data/jobsData';
 const parseRouteToTabState = () => {
   if (typeof window === 'undefined') {
@@ -1796,7 +1792,13 @@ export default function Home({ session, sessionLoading }) {
         </nav>
       )}
 
-      <div key={activeTab} className={`${(activeTab === 'AdminDashboard' || activeTab === 'UserDashboard') ? 'h-screen overflow-hidden' : 'animate-page-transition'} flex-grow flex flex-col`}>
+      <div key={activeTab} className={`${(activeTab === 'AdminDashboard' || activeTab === 'UserDashboard') ? 'h-screen overflow-hidden' : activeTab === 'Login' ? 'min-h-screen w-full' : 'animate-page-transition'} flex-grow flex flex-col`}>
+        <Suspense fallback={
+          <div className="flex-1 min-h-[60vh] flex flex-col items-center justify-center p-8 space-y-4">
+            <div className="w-10 h-10 border-3 border-brandGreen border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-xs font-semibold text-gray-400 tracking-wider">Loading experience...</span>
+          </div>
+        }>
         {activeTab === 'WhatIsCA' ? (
           <BeginnerGuide
             onNavigateTab={(tab) => {
@@ -2095,6 +2097,11 @@ export default function Home({ session, sessionLoading }) {
                           src={mentorImage}
                           alt="Saboor Ahmad - Mentor Profile"
                           className="w-full h-full object-cover"
+                          loading="eager"
+                          fetchPriority="high"
+                          decoding="async"
+                          width="256"
+                          height="256"
                         />
                       </div>
                     </div>
@@ -2836,6 +2843,7 @@ export default function Home({ session, sessionLoading }) {
             </section>
           </>
         )}
+        </Suspense>
       </div>
 
       {/* 11. Footer */}
@@ -2850,6 +2858,8 @@ export default function Home({ session, sessionLoading }) {
                   <img
                     src={logoImg}
                     alt="The TaxMan's Capital Logo"
+                    loading="lazy"
+                    decoding="async"
                     className="h-10 w-auto object-contain shrink-0 drop-shadow-[0_2px_10px_rgba(0,230,118,0.25)] translate-y-1"
                   />
                   <div className="flex flex-col min-w-0 justify-center">

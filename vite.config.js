@@ -9,7 +9,7 @@ export default defineConfig({
     host: true
   },
   build: {
-    chunkSizeWarningLimit: 1000, // Increase warning limit to 1000kB
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -20,7 +20,10 @@ export default defineConfig({
             if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
               return 'vendor-react';
             }
-            return 'vendor';
+            if (id.includes('canvas-confetti')) {
+              return 'vendor-confetti';
+            }
+            return 'vendor-common';
           }
         }
       }

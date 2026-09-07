@@ -5,44 +5,47 @@ import React from 'react';
  * Renders sticky floating social media buttons (WhatsApp, Instagram, LinkedIn, Facebook)
  * on the bottom right side of the screen with smooth hover effects, tooltips, and brand styling.
  */
+const shouldHideSocials = () => {
+  if (typeof window === 'undefined') return false;
+  const pathname = (window.location.pathname || '').toLowerCase();
+  const hash = (window.location.hash || '').toLowerCase();
+  return (
+    pathname.includes('/login') ||
+    pathname.includes('/signup') ||
+    pathname.includes('/register') ||
+    pathname.includes('/admin') ||
+    pathname.includes('/dashboard') ||
+    pathname.includes('/user-dashboard') ||
+    hash.includes('#login') ||
+    hash.includes('#signup') ||
+    hash.includes('#register') ||
+    hash.includes('#admin') ||
+    hash.includes('#dashboard')
+  );
+};
+
 export default function FloatingSocials({
   whatsappUrl = "https://wa.me/",
   instagramUrl = "https://www.instagram.com/saboornoor10",
   linkedinUrl = "https://www.linkedin.com/in/saboorahmad10",
+  hide = false
 }) {
-  const [isHidden, setIsHidden] = React.useState(false);
+  const [isHidden, setIsHidden] = React.useState(shouldHideSocials);
 
   React.useEffect(() => {
-    const checkVisibility = () => {
-      const pathname = (window.location.pathname || '').toLowerCase();
-      const hash = (window.location.hash || '').toLowerCase();
-      const isAuthPage =
-        !!document.querySelector('[data-auth-page="true"]') ||
-        pathname.includes('/login') ||
-        pathname.includes('/signup') ||
-        pathname.includes('/register') ||
-        hash.includes('#login') ||
-        hash.includes('#signup') ||
-        hash.includes('#register');
-
-      const isDashboard =
-        !!document.querySelector('[data-admin-dashboard="true"]') ||
-        pathname.includes('/admin');
-
-      setIsHidden(isAuthPage || isDashboard);
+    const handleLocationChange = () => {
+      setIsHidden(shouldHideSocials());
     };
 
-    checkVisibility();
-    const observer = new MutationObserver(checkVisibility);
-    observer.observe(document.body, { childList: true, subtree: true });
-    window.addEventListener('popstate', checkVisibility);
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
     return () => {
-      observer.disconnect();
-      window.removeEventListener('popstate', checkVisibility);
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
     };
   }, []);
 
-  if (isHidden) return null;
+  if (hide || isHidden) return null;
   const socialItems = [
     {
       id: 'whatsapp',

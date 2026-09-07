@@ -11,6 +11,15 @@ export default function AntigravityCanvas({ className = '', particleCount = 28, 
     let width = (canvas.width = canvas.offsetWidth);
     let height = (canvas.height = canvas.offsetHeight);
 
+    let isVisible = true;
+    const observer = new IntersectionObserver(([entry]) => {
+      isVisible = entry.isIntersecting;
+      if (isVisible && !animationFrameId) {
+        animationFrameId = requestAnimationFrame(render);
+      }
+    }, { threshold: 0.05 });
+    observer.observe(canvas);
+
     const handleResize = () => {
       if (!canvas) return;
       width = canvas.width = canvas.offsetWidth;
@@ -22,7 +31,7 @@ export default function AntigravityCanvas({ className = '', particleCount = 28, 
     const mouse = { x: -1000, y: -1000, radius: 120 };
 
     const handleMouseMove = (e) => {
-      if (!interactive) return;
+      if (!interactive || !isVisible) return;
       const rect = canvas.getBoundingClientRect();
       mouse.x = e.clientX - rect.left;
       mouse.y = e.clientY - rect.top;
@@ -112,16 +121,21 @@ export default function AntigravityCanvas({ className = '', particleCount = 28, 
         ctx.shadowBlur = 0;
       });
 
-      animationFrameId = requestAnimationFrame(render);
+      if (isVisible) {
+        animationFrameId = requestAnimationFrame(render);
+      } else {
+        animationFrameId = null;
+      }
     };
 
     render();
 
     return () => {
+      observer.disconnect();
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseleave', handleMouseLeave);
-      cancelAnimationFrame(animationFrameId);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
     };
   }, [particleCount, interactive]);
 

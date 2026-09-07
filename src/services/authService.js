@@ -8,6 +8,7 @@ import { api } from './api';
 const SESSION_KEY = 'taxman_session';
 const TOKEN_KEY = 'taxman_token';
 const USER_KEY = 'taxman_user';
+const REMEMBER_KEY = 'taxman_remember_me';
 
 // In-memory auth listeners
 const authListeners = new Set();
@@ -23,14 +24,58 @@ const notifyListeners = (session) => {
 };
 
 /**
+ * Cleanly clear all session data from both sessionStorage and localStorage
+ */
+export const clearSessionStorage = () => {
+  try {
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
+  } catch {}
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(REMEMBER_KEY);
+  } catch {}
+};
+
+/**
+ * Save session to sessionStorage (temporary) or localStorage (remembered)
+ */
+export const saveSession = (session, rememberMe = false) => {
+  if (!session || !session.user) return;
+  const targetStorage = rememberMe ? localStorage : sessionStorage;
+  const secondaryStorage = rememberMe ? sessionStorage : localStorage;
+
+  // Clear from the opposite storage to prevent stale ghost sessions
+  try {
+    secondaryStorage.removeItem(TOKEN_KEY);
+    secondaryStorage.removeItem(USER_KEY);
+    secondaryStorage.removeItem(SESSION_KEY);
+  } catch {}
+
+  try {
+    targetStorage.setItem(TOKEN_KEY, session.token || session.access_token || '');
+    targetStorage.setItem(USER_KEY, JSON.stringify(session.user));
+    targetStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    if (rememberMe) {
+      localStorage.setItem(REMEMBER_KEY, 'true');
+    } else {
+      localStorage.removeItem(REMEMBER_KEY);
+    }
+  } catch (err) {
+    console.warn('[AuthService] Failed to persist session:', err);
+  }
+};
+
+/**
  * Synchronously check if user is logged in
  */
 export const isUserLoggedIn = () => {
   try {
-    const token = localStorage.getItem(TOKEN_KEY);
-    const rawUser = localStorage.getItem(USER_KEY);
-    const rawSession = localStorage.getItem(SESSION_KEY);
-    return !!(token || rawUser || rawSession);
+    const session = getInitialSessionSync();
+    return !!(session && session.user);
   } catch {
     return false;
   }
@@ -60,13 +105,31 @@ export const requireAuth = (actionDescription = 'access this protected feature',
 };
 
 /**
- * Get current session synchronously from localStorage with offline resilience
+ * Get current session synchronously from storage with session vs local persistence
  */
 export const getInitialSessionSync = () => {
   try {
-    const rawSession = localStorage.getItem(SESSION_KEY);
-    const token = localStorage.getItem(TOKEN_KEY);
-    const rawUser = localStorage.getItem(USER_KEY);
+    // 1. Check current active browser session in sessionStorage first
+    let token = sessionStorage.getItem(TOKEN_KEY);
+    let rawUser = sessionStorage.getItem(USER_KEY);
+    let rawSession = sessionStorage.getItem(SESSION_KEY);
+
+    // 2. If not in sessionStorage, check localStorage ONLY IF the user explicitly checked Remember Me
+    if (!token && !rawUser && !rawSession) {
+      const isRemembered = localStorage.getItem(REMEMBER_KEY) === 'true';
+      if (isRemembered) {
+        token = localStorage.getItem(TOKEN_KEY);
+        rawUser = localStorage.getItem(USER_KEY);
+        rawSession = localStorage.getItem(SESSION_KEY);
+      } else {
+        // Clear any old legacy unremembered session from localStorage
+        try {
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(USER_KEY);
+          localStorage.removeItem(SESSION_KEY);
+        } catch {}
+      }
+    }
 
     if (!token && !rawSession && !rawUser) {
       return null;
@@ -89,8 +152,8 @@ export const getInitialSessionSync = () => {
 
     // Format consistent session object compatible with both frontend and backend
     const session = {
-      access_token: token || 'mock_token',
-      token: token || 'mock_token',
+      access_token: token || '',
+      token: token || '',
       user: {
         id: user.id || user._id || 'user_' + Date.now(),
         _id: user._id || user.id,
@@ -118,8 +181,46 @@ export const getInitialSessionSync = () => {
   }
 };
 
+/**
+ * Get current session with backend verification to prevent stale sessions after server restarts
+ */
 export const getCurrentSession = async () => {
-  return getInitialSessionSync();
+  const localSession = getInitialSessionSync();
+  if (!localSession || !localSession.token) {
+    return null;
+  }
+
+  // Validate session with backend /auth/me to ensure server has not been restarted or token expired
+  try {
+    const res = await api.get('/auth/me');
+    const remoteUser = res?.data?.data || res?.data;
+    if (remoteUser && (remoteUser._id || remoteUser.id)) {
+      const isRemembered = localStorage.getItem(REMEMBER_KEY) === 'true';
+      const updatedSession = {
+        ...localSession,
+        user: {
+          ...localSession.user,
+          ...remoteUser,
+          id: remoteUser._id || remoteUser.id,
+          _id: remoteUser._id || remoteUser.id,
+          role: remoteUser.role || localSession.user.role
+        }
+      };
+      saveSession(updatedSession, isRemembered);
+      return updatedSession;
+    }
+  } catch (err) {
+    // If backend rejects the token (401 Unauthorized or 403 Forbidden), server restarted or token is invalid
+    if (err.status === 401 || err.status === 403) {
+      console.warn('[AuthService] Stored session expired or invalid on server, clearing session:', err.message);
+      clearSessionStorage();
+      notifyListeners(null);
+      return null;
+    }
+    // If backend is temporarily unreachable/offline, allow local session if remembered
+  }
+
+  return localSession;
 };
 
 /**
@@ -238,9 +339,9 @@ export const registerUser = async (email, password, username, full_name, qualifi
 };
 
 /**
- * Login user and persist session
+ * Login user and persist session (in sessionStorage by default, or localStorage if rememberMe is true)
  */
-export const loginUser = async (email, password) => {
+export const loginUser = async (email, password, rememberMe = false) => {
   const cleanEmail = email.trim().toLowerCase();
 
   try {
@@ -279,10 +380,7 @@ export const loginUser = async (email, password) => {
       }
     };
 
-    // Store in localStorage for permanent persistence across browser refresh
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_KEY, JSON.stringify(session.user));
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    saveSession(session, rememberMe);
 
     notifyListeners(session);
     return session;
@@ -332,9 +430,7 @@ export const loginUser = async (email, password) => {
         user: fallbackUser
       };
 
-      localStorage.setItem(TOKEN_KEY, fallbackSession.token);
-      localStorage.setItem(USER_KEY, JSON.stringify(fallbackSession.user));
-      localStorage.setItem(SESSION_KEY, JSON.stringify(fallbackSession));
+      saveSession(fallbackSession, rememberMe);
 
       notifyListeners(fallbackSession);
       return fallbackSession;
@@ -354,9 +450,7 @@ export const logoutUser = async () => {
   } catch {
     // Ignore offline errors on logout
   } finally {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    localStorage.removeItem(SESSION_KEY);
+    clearSessionStorage();
     notifyListeners(null);
   }
 };

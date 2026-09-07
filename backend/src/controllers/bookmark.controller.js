@@ -32,7 +32,6 @@ export const toggleBookmark = asyncHandler(async (req, res) => {
 export const getBookmarks = asyncHandler(async (req, res) => {
   const bookmarks = await Bookmark.find({ user: req.user._id })
     .populate('job')
-    .populate('opportunity')
     .populate('resource')
     .sort({ createdAt: -1 });
 
